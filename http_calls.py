@@ -160,6 +160,10 @@ class RestTools(HttpCall):
             self.sleep(wait_sec)
         return False
 
+    def quoteUrl(self, url):
+        return urllib.parse.quote(url)
+
+
     def waitSecondTimesUrlResponseAttributeHasValue(self, wait_sec, retries, url, attr, value):
         def func(args):
 
