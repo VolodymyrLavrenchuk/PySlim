@@ -1,8 +1,4 @@
 # -*- coding: utf-8 -*-
-
-# © 2014 Dell Inc.
-# ALL RIGHTS RESERVED.
-
 from ExecuteQuery import Execute
 from date_utils import DateUtils
 from socket import error as socket_error
