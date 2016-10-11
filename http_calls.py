@@ -56,8 +56,8 @@ class HttpCall:
 
         ret = None
 
-
-        if type(resp) != urllib.error.URLError and type(resp) != socket_error and type(resp) != TypeError and type(resp) != AttributeError:
+        if type(resp) != urllib.error.URLError and type(resp) != socket_error and type(resp) != TypeError and type(
+                resp) != AttributeError:
             ret = resp.read()
             print("Response body: %s" % ret)
             global lastRequestResult
@@ -93,6 +93,11 @@ class RestTools(HttpCall):
     def get_str(self, url, args=None):
         return self.GET(self.get_full_url(url), {'Accept': 'application/json'}, args).decode('utf-8')
 
+    def get_hex_str(self, url, args=None):
+        resp = self.get_str(url, args)
+        import binascii
+        return binascii.hexlify(resp)
+
     def searchRegexpInHtml(self, pattern, url):
 
         import re
@@ -114,7 +119,7 @@ class RestTools(HttpCall):
 
             print("Failed to parse json")
 
-        print ("get_json result: %s" % res)
+        print("get_json result: %s" % res)
         return res
 
     def get_attr_by_type(self, data, attr):
@@ -169,8 +174,8 @@ class RestTools(HttpCall):
 
         result = self.wait(wait_sec, retries, func, attr=attr, url=url)
         if result is False:
-            raise Exception('Actual value: %s' % self.getAttributeFromResponse(attr,url))
-            
+            raise Exception('Actual value: %s' % self.getAttributeFromResponse(attr, url))
+
         return result
 
     def waitSecondTimesUrlResponseAttributeNotZero(self, wait_sec, retries, url, attr):
@@ -249,6 +254,11 @@ class RestTools(HttpCall):
 
         global lastRequestResult
         return json.loads(lastRequestResult)[AttrName]
+
+    def getRawRequestResult(self):
+
+        global lastRequestResult
+        return lastRequestResult
 
     def getLastError(self):
 
@@ -361,7 +371,7 @@ class LastResponseAsTable(HttpResultAsTable):
         try:
 
             global lastRequestResult
-            print('lastRequestResult: %s' %lastRequestResult)
+            print('lastRequestResult: %s' % lastRequestResult)
             body = json.loads(lastRequestResult)
             if type(body) == dict and "hits" in body:
                 body = body["hits"]
@@ -517,3 +527,5 @@ class BulkPost(Bulk):
 class BulkPatch(Bulk):
     def __init__(self, url):
         Bulk.__init__(self, url, 'PATCH')
+
+
