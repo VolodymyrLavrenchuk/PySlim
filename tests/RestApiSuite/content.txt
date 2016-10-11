@@ -1,0 +1,8 @@
+!define TEST_SYSTEM {slim}
+!define SLIM_VERSION {0.1}
+!path /FitNesseRoot/
+
+!define COMMAND_PATTERN {python -W error::RuntimeWarning:: -m waferslim.server -v --syspath %p -l /FitNesseRoot/logging.conf}
+
+
+!contents -R2 -g -p -f -h
