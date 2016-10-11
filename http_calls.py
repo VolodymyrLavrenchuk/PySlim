@@ -81,8 +81,11 @@ class HttpCall:
     def get_full_url(self, url):
 
         global host_url
-        return url if url.startswith("http://") else host_url + url
-
+        
+        if url.startswith("http://") or url.startswith("https://"):
+            return url
+        else: 
+            return host_url + url
 
 class RestTools(HttpCall):
     http_headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}

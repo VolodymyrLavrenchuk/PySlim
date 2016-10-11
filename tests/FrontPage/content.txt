@@ -1,0 +1,3 @@
+[[Rest API Suite][.RestApiSuite]]
+
+!note Release ${FITNESSE_VERSION}
