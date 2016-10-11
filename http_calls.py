@@ -20,6 +20,7 @@ lastResponseTime = None
 
 
 class HttpCall:
+
     def open(self, req):
 
         try:
@@ -56,8 +57,11 @@ class HttpCall:
 
         ret = None
 
-        if type(resp) != urllib.error.URLError and type(resp) != socket_error and type(resp) != TypeError and type(
-                resp) != AttributeError:
+        if not isinstance(
+            resp, urllib.error.URLError) and not isinstance(
+            resp, socket_error) and not isinstance(
+            resp, TypeError) and not isinstance(
+                resp, AttributeError):
             ret = resp.read()
             print("Response body: %s" % ret)
             global lastRequestResult
@@ -81,20 +85,28 @@ class HttpCall:
     def get_full_url(self, url):
 
         global host_url
-        
+
         if url.startswith("http://") or url.startswith("https://"):
             return url
-        else: 
+        else:
             return host_url + url
 
+
 class RestTools(HttpCall):
-    http_headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+    http_headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'}
 
     def getRequest(self, url, data=None, headers={}):
-        return self.request(self.get_full_url(url), data.encode('utf-8'), headers)
+        return self.request(
+            self.get_full_url(url),
+            data.encode('utf-8'),
+            headers)
 
     def get_str(self, url, args=None):
-        return self.GET(self.get_full_url(url), {'Accept': 'application/json'}, args).decode('utf-8')
+        return self.GET(
+            self.get_full_url(url), {
+                'Accept': 'application/json'}, args).decode('utf-8')
 
     def get_hex_str(self, url, args=None):
         resp = self.get_str(url, args)
@@ -115,7 +127,7 @@ class RestTools(HttpCall):
             if resp:
 
                 res = json.loads(resp)
-                if type(res) == dict:
+                if isinstance(res, dict):
                     if "hits" in res:
                         res = res["hits"]
         except ValueError:
@@ -166,8 +178,8 @@ class RestTools(HttpCall):
     def quoteUrl(self, url):
         return urllib.parse.quote(url)
 
-
-    def waitSecondTimesUrlResponseAttributeHasValue(self, wait_sec, retries, url, attr, value):
+    def waitSecondTimesUrlResponseAttributeHasValue(
+            self, wait_sec, retries, url, attr, value):
         def func(args):
 
             resp = self.getAttributeFromResponse(args["attr"], args["url"])
@@ -181,11 +193,15 @@ class RestTools(HttpCall):
 
         result = self.wait(wait_sec, retries, func, attr=attr, url=url)
         if result is False:
-            raise Exception('Actual value: %s' % self.getAttributeFromResponse(attr, url))
+            raise Exception(
+                'Actual value: %s' %
+                self.getAttributeFromResponse(
+                    attr, url))
 
         return result
 
-    def waitSecondTimesUrlResponseAttributeNotZero(self, wait_sec, retries, url, attr):
+    def waitSecondTimesUrlResponseAttributeNotZero(
+            self, wait_sec, retries, url, attr):
         def func(args):
 
             resp = self.getAttributeFromResponse(args["attr"], args["url"])
@@ -204,7 +220,8 @@ class RestTools(HttpCall):
 
         return self.wait(wait_sec, retries, func, url=url)
 
-    def waitSecondTimesUrlArgsResponseValue(self, wait_sec, retries, url, attrs, value):
+    def waitSecondTimesUrlArgsResponseValue(
+            self, wait_sec, retries, url, attrs, value):
 
         def func(args):
             return self.get_str(url) == value
@@ -222,7 +239,8 @@ class RestTools(HttpCall):
     def POST(self, url, data="", headers=""):
 
         data = data.replace('\n', '\r\n')
-        req = self.getRequest(url, data, json.loads(headers) if headers else self.http_headers)
+        req = self.getRequest(url, data, json.loads(
+            headers) if headers else self.http_headers)
 
         return self.read(req)
 
@@ -278,7 +296,8 @@ class RestTools(HttpCall):
 
         fields = []
 
-        for key, value in schema[index_name]['mappings']['objects']['properties'].iteritems():
+        for key, value in schema[index_name]['mappings'][
+                'objects']['properties'].iteritems():
 
             if 'fields' in value and '_raw' in value['fields']:
                 fields.append(key)
@@ -287,9 +306,10 @@ class RestTools(HttpCall):
 
 
 class HttpResultAsTable(RestTools, Execute):
+
     def __init__(self, url, args=None):
         self.result = self.get_json(url, args)
-        if type(self.result) == dict:
+        if isinstance(self.result, dict):
             if "hits" in self.result:
                 self.result = self.result["hits"]
 
@@ -297,7 +317,7 @@ class HttpResultAsTable(RestTools, Execute):
 
         values = []
 
-        if not type(self.result) == list:
+        if not isinstance(self.result, list):
             self.result = [self.result]
 
         for row in self.result:
@@ -342,10 +362,19 @@ class HttpResultAsTable(RestTools, Execute):
                 _h = h.rstrip('?')
                 setattr(self, _h, lambda x: x)
             else:
-                setattr(self, "set%s" % str.replace(h, h[0], h[0].upper(), 1), lambda x: x)
+                setattr(
+                    self,
+                    "set%s" %
+                    str.replace(
+                        h,
+                        h[0],
+                        h[0].upper(),
+                        1),
+                    lambda x: x)
 
 
 class LastResultAsTable(HttpResultAsTable):
+
     def __init__(self):
         global lastRequestResult
 
@@ -355,6 +384,7 @@ class LastResultAsTable(HttpResultAsTable):
 
 
 class LastRawResultAsTable(HttpResultAsTable):
+
     def __init__(self):
         global lastRequestResult
         self.result = json.loads(lastRequestResult)
@@ -362,16 +392,21 @@ class LastRawResultAsTable(HttpResultAsTable):
 
 
 class ResponseAsTable(HttpResultAsTable):
+
     def __init__(self, url, args=None):
         body = self.get_json(url, args)
-        if type(body) == dict and "hits" in body:
+        if isinstance(body, dict) and "hits" in body:
             body = body["hits"]
 
         global lastResponse
-        self.result = {'status_code': lastResponse.getcode(), 'headers': lastResponse.info().dict, 'body': body}
+        self.result = {
+            'status_code': lastResponse.getcode(),
+            'headers': lastResponse.info().dict,
+            'body': body}
 
 
 class LastResponseAsTable(HttpResultAsTable):
+
     def __init__(self):
         body = None
 
@@ -380,7 +415,7 @@ class LastResponseAsTable(HttpResultAsTable):
             global lastRequestResult
             print('lastRequestResult: %s' % lastRequestResult)
             body = json.loads(lastRequestResult)
-            if type(body) == dict and "hits" in body:
+            if isinstance(body, dict) and "hits" in body:
                 body = body["hits"]
 
         except BaseException as e:
@@ -390,10 +425,14 @@ class LastResponseAsTable(HttpResultAsTable):
 
         global lastResponse
 
-        self.result = {'status_code': lastResponse.getcode(), 'headers': lastResponse.info(), 'body': body}
+        self.result = {
+            'status_code': lastResponse.getcode(),
+            'headers': lastResponse.info(),
+            'body': body}
 
 
 class BodyFromTable(RestTools):
+
     def __init__(self, method, url, count=1, query=None, args=None):
         self.method = method
         self.url = url
@@ -433,7 +472,7 @@ class BodyFromTable(RestTools):
 
     def table(self, rows):
 
-        if type(rows) != tuple:
+        if not isinstance(rows, tuple):
             self.processRow({}, "")
         else:
             header = rows[0]
@@ -441,7 +480,15 @@ class BodyFromTable(RestTools):
                 if h == "_id?":
                     setattr(self, "_id", lambda self=self: self.ids.pop(0))
                 else:
-                    setattr(self, "set%s" % str.replace(h, h[0], h[0].upper(), 1), lambda x: x)
+                    setattr(
+                        self,
+                        "set%s" %
+                        str.replace(
+                            h,
+                            h[0],
+                            h[0].upper(),
+                            1),
+                        lambda x: x)
 
             link_ids = []
             if self.query:
@@ -461,7 +508,8 @@ class BodyFromTable(RestTools):
                             pass
                         else:
                             if not self.isUndefined(row[idx]):
-                                data[header[idx]] = self.check_hashtable(self.check_dict(row[idx]))
+                                data[header[idx]] = self.check_hashtable(
+                                    self.check_dict(row[idx]))
 
                     self.processRow(data, id)
 
@@ -492,26 +540,31 @@ class BodyFromTable(RestTools):
 
 
 class Post(BodyFromTable):
+
     def __init__(self, url, count=1, query=None, args=None):
         BodyFromTable.__init__(self, "POST", url, count, query, args)
 
 
 class Put(BodyFromTable):
+
     def __init__(self, url, count=1, query=None, args=None):
         BodyFromTable.__init__(self, "PUT", url, count, query, args)
 
 
 class Patch(BodyFromTable):
+
     def __init__(self, url):
         BodyFromTable.__init__(self, "PATCH", url)
 
 
 class Delete(BodyFromTable):
+
     def __init__(self, url):
         BodyFromTable.__init__(self, "DELETE", url)
 
 
 class Bulk(BodyFromTable):
+
     def __init__(self, url, method):
         self.body = []
         self.method = method
@@ -527,12 +580,12 @@ class Bulk(BodyFromTable):
 
 
 class BulkPost(Bulk):
+
     def __init__(self, url):
         Bulk.__init__(self, url, 'POST')
 
 
 class BulkPatch(Bulk):
+
     def __init__(self, url):
         Bulk.__init__(self, url, 'PATCH')
-
-
