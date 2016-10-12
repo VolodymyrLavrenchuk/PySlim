@@ -105,7 +105,7 @@ class RestTools(HttpCall):
         'Accept': 'application/json'}
 
     def getRequest(self, url, data=None, headers={}):
-        return self.request(self.get_full_url(url), data, headers)
+        return self.request(self.get_full_url(url), data.encode('utf-8'), headers)
 
     def get_str(
         self, url, args=None, http_headers={
@@ -246,26 +246,26 @@ class RestTools(HttpCall):
 
         return line.replace('\n', '\\n')
 
-    def POST(self, url, data="", headers=""):
+    def POST(self, url, data="", headers={"Content-Type": "application/json", "Accept": "application/json"}):
 
         req = self.getRequest(url, data, headers)
 
         return self.read(req)
 
-    def PUT(self, url, data=""):
-        req = self.getRequest(url, data, self.http_headers)
+    def PUT(self, url, data="", headers={"Content-Type": "application/json", "Accept": "application/json"}):
+        req = self.getRequest(url, data, headers)
         req.get_method = lambda: 'PUT'
 
         return self.read(req)
 
-    def DELETE(self, url, data=""):
-        req = self.getRequest(url, data, self.http_headers)
+    def DELETE(self, url, data="", headers={"Content-Type": "application/json", "Accept": "application/json"}):
+        req = self.getRequest(url, data, headers)
         req.get_method = lambda: 'DELETE'
 
         return self.read(req)
 
-    def PATCH(self, url, data=""):
-        req = self.getRequest(url, data, self.http_headers)
+    def PATCH(self, url, data="", headers={"Content-Type": "application/json", "Accept": "application/json"}):
+        req = self.getRequest(url, data, headers)
         req.get_method = lambda: 'PATCH'
 
         return self.read(req)
@@ -567,10 +567,10 @@ class BodyFromTable(RestTools):
         func = getattr(self, self.method)
         url = self.makeUrl(data, id)
         if self.content_type == 'application/json':
-            data = data.replace('\n', '\r\n')
-            data = json.dumps(data).encode('utf-8')
+            data = json.dumps(data)
+            data = data.replace('\n', '\r\n')            
         else:
-            data = urllib.parse.urlencode(data).encode('utf-8')
+            data = urllib.parse.urlencode(data)
 
         ret = func(url, data, self.http_headers)
 
@@ -589,7 +589,7 @@ class BodyFromTable(RestTools):
 
 class Post(BodyFromTable):
 
-    def __init__(self, url, count=1, query=None, args=None, http_headers=None):
+    def __init__(self, url, count=1, query=None, args=None, http_headers='{"Content-Type": "application/json", "Accept": "application/json"}'):
         BodyFromTable.__init__(
             self,
             "POST",
