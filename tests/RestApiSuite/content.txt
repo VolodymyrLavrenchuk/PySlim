@@ -3,6 +3,7 @@
 !path /FitNesseRoot/
 
 !define COMMAND_PATTERN {python -W error::RuntimeWarning:: -m waferslim.server -v --syspath %p -l /FitNesseRoot/logging.conf}
+!define URL {http://py_slim_server:3000}
 
 
 !contents -R2 -g -p -f -h

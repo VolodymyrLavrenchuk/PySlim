@@ -320,7 +320,12 @@ class HttpResultAsTable(RestTools, Execute):
                                     k = int(k)
                                 elif isinstance(val, dict) and k.isdigit():
                                     k = val.keys()[int(k)]
+
+                                print(val)    
+                                print(k)    
+
                                 val = val[k]
+
                         except BaseException as e:
                             print('HttpResultAsTable Exception: ', e)
                             val = ''
