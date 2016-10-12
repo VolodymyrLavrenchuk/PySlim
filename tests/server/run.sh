@@ -8,5 +8,4 @@ docker run -d \
     -v $(pwd):/$NAME \
     --network=$NAME \
     -v $(pwd):/$NAME \
-    --name=$NAME $NAME \
-    sleep 3000
+    --name=$NAME $NAME 
