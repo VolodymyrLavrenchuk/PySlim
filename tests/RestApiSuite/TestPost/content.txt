@@ -1,0 +1,15 @@
+|import            |
+|Scripts.http_calls|
+
+!|post|http://py_slim_server:3000/delete/users|
+
+!|post    |http://py_slim_server:3000/users|
+|FirstName|LastName                        |
+|Tony     |Soprano                         |
+|Jennifer |Melfi                           |
+
+!|Query:http result as table|http://py_slim_server:3000/users|
+|FirstName                  |LastName                        |
+|Tony                       |Soprano                         |
+|Jennifer                   |Melfi                           |
+
