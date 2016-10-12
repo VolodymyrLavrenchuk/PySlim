@@ -1,0 +1,11 @@
+!|post|${URL}/delete/users|
+
+!|script|RestTools                                                                   |
+|POST   |${URL}/users   ||{"Passport:": {"FirstName": "Tony", "LastName": "Soprano"}}|
+|check  |get status code|201                                                         |
+
+!|Query:http result as table|http://py_slim_server:3000/users|
+|Passport.LastName                                           |
+|Tony                                                        |
+|Jennifer                                                    |
+
