@@ -1,5 +1,9 @@
 NAME=py_slim_fitnesse
 
+pushd tests/waferslim
+    ./build.sh
+popd
+
 pushd tests/server
     ./run.sh
 popd
@@ -11,5 +15,5 @@ docker run -d \
     -v $(pwd):/FitNesseRoot/Scripts \
     --name=$NAME \
     -p 8081:8081 \
-    mikeplavsky/docker-waferslim 
+    waferslim-coverage
 
