@@ -1,0 +1,10 @@
+-!|script|RestTools                                                                  |
+|POST |${URL}/users   ||{"Passport": {"FirstName": "Carmela"}, "Kids": [{"Name":"Antony"},{"Name":"Meadow"}]}|
+|check|get status code|201                                                                                   |
+
+!|Query:http result as table|http://py_slim_server:3000/users          |
+|id                         |Passport.FirstName|Kids.0.Name|Kids.1.Name|
+|1                          |Carmela           |Antony     |Meadow     |
+
+
+

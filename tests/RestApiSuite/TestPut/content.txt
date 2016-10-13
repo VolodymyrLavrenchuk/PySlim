@@ -1,0 +1,21 @@
+!|post|${URL}/delete/users|
+
+!|post    |${URL}/users|
+|FirstName|LastName    |
+|Tony     |Soprano     |
+|Jennifer |Melfi       |
+
+!|Query:http result as table|${URL}/users      |
+|id                         |FirstName|LastName|
+|1                          |Tony     |Soprano |
+|2                          |Jennifer |Melfi   |
+
+-!|script|RestTools|
+|PUT  |${URL}/users/1 ||{"FirstName": "Antony", "LastName": "Soprano" }|
+|check|get status code|200                                             |
+
+!|Query:http result as table|${URL}/users      |
+|id                         |FirstName|LastName|
+|1                          |Antony   |Soprano |
+|2                          |Jennifer |Melfi   |
+

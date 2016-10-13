@@ -1,5 +1,3 @@
-!|post|${URL}/delete/users|
-
 -!|script|RestTools                                                                  |
 |POST |${URL}/users   ||{"Passport": {"FirstName": "Tony", "LastName": "Soprano", "Age": {"Real": 46}}}|
 |check|get status code|201                                                                             |
@@ -9,8 +7,8 @@
 |check|get status code|201                                                                               |
 
 
-!|Query:http result as table|http://py_slim_server:3000/users   |
-|Passport.FirstName         |Passport.LastName|Passport.Age.Real|
-|Tony                       |Soprano          |46               |
-|Jennifer                   |Melfi            |35               |
+!|Query:http result as table|http://py_slim_server:3000/users                      |
+|id                         |Passport.FirstName|Passport.LastName|Passport.Age.Real|
+|1                          |Tony              |Soprano          |46               |
+|2                          |Jennifer          |Melfi            |35               |
 

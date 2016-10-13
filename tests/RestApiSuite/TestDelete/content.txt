@@ -1,0 +1,20 @@
+!|post    |${URL}/users|
+|FirstName|LastName    |
+|Tony     |Soprano     |
+|Jennifer |Melfi       |
+
+!|Query:http result as table|${URL}/users      |
+|id                         |FirstName|LastName|
+|1                          |Tony     |Soprano |
+|2                          |Jennifer |Melfi   |
+
+
+-!|script|RestTools|
+|DELETE|${URL}/users/1     |
+|check |get status code|200|
+
+!|Query:http result as table|${URL}/users      |
+|id                         |FirstName|LastName|
+|2                          |Jennifer |Melfi   |
+
+
