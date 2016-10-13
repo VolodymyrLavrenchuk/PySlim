@@ -4,8 +4,7 @@ updateList
 updateDoNotCopyOverList
 ErrorLogs/*
 FitNesse/*
-files/testResults/*
-files/testProgress/*
+files
 .svn
 .DS_Store
 desktop.ini

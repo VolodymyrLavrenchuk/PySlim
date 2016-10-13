@@ -2,7 +2,9 @@
 !define SLIM_VERSION {0.1}
 !path /FitNesseRoot/
 
-!define COMMAND_PATTERN {python -W error::RuntimeWarning:: -m waferslim.server -v --syspath %p -l /FitNesseRoot/logging.conf}
+#!define COMMAND_PATTERN {python -W error::RuntimeWarning:: -m waferslim.server -v --syspath %p -l /FitNesseRoot/logging.conf}
+!define COMMAND_PATTERN {coverage run /usr/local/lib/python3.5/site-packages/waferslim/server.py -v --syspath %p -l /FitNesseRoot/logging.conf}
+
 !define URL {http://py_slim_server:3000}
 
 
