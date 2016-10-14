@@ -1,0 +1,13 @@
+!|post    |${URL}/users|
+|FirstName|LastName    |
+|Carmela  |Soprano     |
+
+-!|script|RestTools|
+|wait|0.2|second|2|times url|${URL}/users/1|response attribute|FirstName|has value|Carmela|
+
+!|post|${URL}/create/user|
+|id   |FirstName|LastName|
+|1    |Tony     |Soprano |
+
+-!|script|RestTools|
+|wait|0.2|second|25|times url|${URL}/users/1|response attribute|FirstName|has value|Tony|

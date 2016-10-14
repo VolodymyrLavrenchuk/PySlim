@@ -1,0 +1,15 @@
+!|post    |${URL}/create/user|
+|FirstName|LastName          |
+|Tony     |Soprano           |
+
+-!|script|RestTools|
+|check|wait|0.2|second|2|times url|${URL}/users|has valid response|false|
+
+!|post|${URL}/delete/users|
+
+!|post    |${URL}/create/user|
+|FirstName|LastName          |
+|Tony     |Soprano           |
+
+-!|script|RestTools|
+|wait|0.2|second|15|times url|${URL}/users|has valid response|
