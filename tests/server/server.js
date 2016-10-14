@@ -11,8 +11,44 @@ let middlewares = srv.defaults();
 server.use(middlewares);
 
 server.post("/delete/users", (req, res)=>{
-    console.log(router.db.set('users',[]));
-    res.jsonp({Done:true});
+
+    let r = router.db.set('users',[]);
+    console.log(r);
+
+    res.json({Done:true});
+
+});       
+
+server.put("/change/user", (req,res)=>{
+
+    setTimeout(()=>{
+
+        res = router.db
+              .get('users')
+              .find({id: req.body.id})
+              .assign(req.body);
+
+        console.log(res);
+
+    },2000);
+
+    res.json(req.body);
+
+});
+
+server.post("/create/user", (req,res)=>{
+
+    setTimeout(()=>{
+
+        res = router.db.get('users').push(
+                req.body);
+
+        console.log(res);
+
+    },2000);
+
+    res.json(req.body);
+
 });
 
 server.use(router);
