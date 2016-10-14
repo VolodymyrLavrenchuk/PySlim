@@ -51,14 +51,6 @@ server.post("/create/user", (req,res)=>{
 
 });
 
-server.get("/result", (req, res)=>{
-
-    setTimeout(()=>{
-        res.json({Done:true});
-    },3000);
-
-});
-
 server.use(router);
 
 server.listen(3000, ()=>{
