@@ -1,0 +1,48 @@
+!|script                                  |
+|Header|Content-Type |=|application/pyslim|
+|Header|Authorization|=|Bearer One        |
+
+
+!|Query:http result as table|http://py_slim_server:3000/headers|
+|content-type               |authorization                     |
+|application/pyslim         |Bearer One                        |
+
+!|script         |
+|Header|Skip|=|22|
+
+!|post |http://py_slim_server:3000/headers|
+|name  |school                            |
+|Meadow|239                               |
+
+!|query:last raw result as table|
+|content-type          |skip    |
+|application/pyslim    |22      |
+
+!|script             |
+|Header|Previous|=|21|
+
+!|delete|http://py_slim_server:3000/headers|
+|name   |school                            |
+|Meadow |239                               |
+
+!|query:last raw result as table|
+|previous         |skip         |
+|21               |22           |
+
+!|patch|http://py_slim_server:3000/headers|
+|name  |school                            |
+|Meadow|239                               |
+
+!|query:last raw result as table|
+|content-type          |skip    |
+|application/pyslim    |22      |
+
+!|put  |http://py_slim_server:3000/headers|
+|name  |school                            |
+|Meadow|239                               |
+
+!|query:last raw result as table|
+|content-type          |skip    |
+|application/pyslim    |22      |
+
+

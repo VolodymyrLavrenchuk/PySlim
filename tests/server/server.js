@@ -10,6 +10,32 @@ let middlewares = srv.defaults();
 
 server.use(middlewares);
 
+server.all("/headers", (req, res)=>{
+    res.json(req.headers);
+});
+
+server.all("/packed/users", (req, res)=>{
+
+    let users = router.db
+        .get('users')
+        .value();
+
+    var packed = {}
+    packed[req.query.field] = users;
+
+    if (req.query.twice) {
+
+        let double_packed = {}
+        double_packed[req.query.field] = packed;
+
+        packed = double_packed
+
+    }
+
+    res.json(packed);
+
+});
+
 server.post("/delete/users", (req, res)=>{
 
     let r = router.db.set('users',[]);
