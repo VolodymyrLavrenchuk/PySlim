@@ -1,0 +1,8 @@
+!|script|HttpCall                                        |
+|Header |Content-Type|=|application/x-www-form-urlencoded|
+
+
+!|post             |https://login.windows.net/98a24190-8c5f-42a5-84b5-4a8aa79af6d9/oauth2/token?api-version=1.0                     |
+|grant_type        |client_id                           |client_secret                               |resource                      |
+|client_credentials|df96d14a-3450-45e7-a63f-c9cac3e2b3d9|Nm4llgwNDox+DZcTVmhwJ9X5NEq9XzTVHhb4sH7mk/s=|!-https://graph.windows.net/-!|
+

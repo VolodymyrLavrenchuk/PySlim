@@ -1,1 +1,4 @@
+!|script|HttpCall                       |
+|Header |Content-Type|=|application/json|
+
 !|post|${URL}/delete/users|

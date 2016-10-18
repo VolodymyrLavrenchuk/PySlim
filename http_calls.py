@@ -18,6 +18,7 @@ lastRequestError = None
 lastResponse = None
 lastResponseTime = None
 
+g_headers = dict()
 
 class HttpCall:
     def open(self, req):
@@ -73,6 +74,14 @@ class HttpCall:
 
         return self.read(req)
 
+    def Header(self, h, v):
+
+        global g_headers
+        g_headers[h] = v
+
+        print("Headers:")
+        print(g_headers)
+
     def setHostUrl(self, url):
 
         global host_url
@@ -91,6 +100,7 @@ class RestTools(HttpCall):
     http_headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
     def getRequest(self, url, data=None, headers={}):
+        headers.update(g_headers)
         return self.request(self.get_full_url(url), data.encode('utf-8'), headers)
 
     def get_str(self, url, args=None):
@@ -481,7 +491,15 @@ class BodyFromTable(RestTools):
 
         func = getattr(self, self.method)
         url = self.makeUrl(data, id)
-        ret = func(url, json.dumps(data))
+        
+        ct = g_headers.get("Content-Type")
+
+        if ct == "application/x-www-form-urlencoded":
+            data = urllib.parse.urlencode(data)
+        else:
+            data = json.dumps(data)
+
+        ret = func(url, data)
 
         if self.method == "POST" and len(ret) > 0:
             try:
