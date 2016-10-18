@@ -10,6 +10,10 @@ let middlewares = srv.defaults();
 
 server.use(middlewares);
 
+server.all("/headers", (req, res)=>{
+    res.json(req.headers);
+});
+
 server.post("/delete/users", (req, res)=>{
 
     let r = router.db.set('users',[]);
