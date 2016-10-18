@@ -392,6 +392,8 @@ class ResponseAsTable(HttpResultAsTable):
             body = body[g_array_field]
 
         global lastResponse
+        print(lastResponse.info())
+
         self.result = {'status_code': lastResponse.getcode(), 'headers': lastResponse.info().dict, 'body': body}
 
 
