@@ -1,0 +1,26 @@
+!|script|HttpCall                                        |
+|Header |Content-Type|=|application/x-www-form-urlencoded|
+
+!3 User and password must be specified here.
+
+!define TENANT_ID {sopranos.onmicrosoft.com}
+!define XPLAT_CLIENT_ID {04b07795-8ddb-461a-bbee-02f9e1bf7b46}
+!define USER {****}
+!define PWD {*****}
+
+!|post     |https://login.windows.net/${TENANT_ID}/oauth2/token?api-version=1.6|
+|grant_type|username  |password |client_id          |resource                  |
+|password  |${USER}   |${PWD}   |${XPLAT_CLIENT_ID} |https://graph.windows.net |
+
+!|script       |RestTools                 |
+|$access_token=|get attribute|access_token|
+
+!|script|HttpCall                            |
+|Header |Authorization|=|Bearer $access_token|
+|Header |Content-Type |=|application/json    |
+
+!|script          |
+|Array Field|value|
+
+!|query:http result as table|https://graph.windows.net/${TENANT_ID}/users?api-version=1.6 |
+|objectType                 |objectId|mailNickname|displayName|mailEnabled|securityEnabled|

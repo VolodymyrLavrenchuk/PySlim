@@ -1,3 +1,4 @@
 [[Rest API Suite][.RestApiSuite]]
+[[Research][.Research]]
 
 !note Release ${FITNESSE_VERSION}

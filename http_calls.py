@@ -19,6 +19,7 @@ lastResponse = None
 lastResponseTime = None
 
 g_headers = dict()
+g_array_field = "hits"
 
 class HttpCall:
     def open(self, req):
@@ -68,11 +69,19 @@ class HttpCall:
         return ret
 
     def GET(self, url, headers={}, args=None):
+
+        headers.update(g_headers)
+
         if args:
             url = url + urllib.parse.quote(args, '=&')
         req = self.request(url, None, headers)
 
         return self.read(req)
+
+    def ArrayField(self, value):
+
+        global g_array_field
+        g_array_field = value
 
     def Header(self, h, v):
 
@@ -126,8 +135,8 @@ class RestTools(HttpCall):
 
                 res = json.loads(resp)
                 if type(res) == dict:
-                    if "hits" in res:
-                        res = res["hits"]
+                    if g_array_field in res:
+                        res = res[g_array_field]
         except ValueError:
 
             print("Failed to parse json")
@@ -300,8 +309,8 @@ class HttpResultAsTable(RestTools, Execute):
     def __init__(self, url, args=None):
         self.result = self.get_json(url, args)
         if type(self.result) == dict:
-            if "hits" in self.result:
-                self.result = self.result["hits"]
+            if g_array_field in self.result:
+                self.result = self.result[g_array_field]
 
     def get_dataset(self):
 
@@ -379,8 +388,8 @@ class LastRawResultAsTable(HttpResultAsTable):
 class ResponseAsTable(HttpResultAsTable):
     def __init__(self, url, args=None):
         body = self.get_json(url, args)
-        if type(body) == dict and "hits" in body:
-            body = body["hits"]
+        if type(body) == dict and g_array_field in body:
+            body = body[g_array_field]
 
         global lastResponse
         self.result = {'status_code': lastResponse.getcode(), 'headers': lastResponse.info().dict, 'body': body}
@@ -395,8 +404,8 @@ class LastResponseAsTable(HttpResultAsTable):
             global lastRequestResult
             print('lastRequestResult: %s' % lastRequestResult)
             body = json.loads(lastRequestResult)
-            if type(body) == dict and "hits" in body:
-                body = body["hits"]
+            if type(body) == dict and g_array_field in body:
+                body = body[g_array_field]
 
         except BaseException as e:
 
