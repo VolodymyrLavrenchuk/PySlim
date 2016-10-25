@@ -108,8 +108,8 @@ class HttpCall:
 class RestTools(HttpCall):
     http_headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
-    def format_raw_json(self, data, args=None):
-        return json.dumps(data.decode('utf-8'),sort_keys=True)
+    def format_raw_get(self, url, args=None):
+        return json.dumps(self.get_json(url),sort_keys=True)
     
     def getRequest(self, url, data=None, headers={}):
         headers.update(g_headers)
