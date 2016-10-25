@@ -143,6 +143,9 @@ class RestTools(HttpCall):
 
         print("get_json result: %s" % res)
         return res
+        
+    def get_json_str(self, url, args=None):
+        return str(self.get_json(url,args))
 
     def get_attr_by_type(self, data, attr):
 
@@ -527,7 +530,7 @@ class BodyFromTable(RestTools):
 
 class Get(BodyFromTable):
     def __init__(self, url):
-        BodyFromTable.__init__(self, "GET", url)
+        BodyFromTable.__init__(self, "GET", url, self.http_headers)
         
 class Post(BodyFromTable):
     def __init__(self, url, count=1, query=None, args=None):
