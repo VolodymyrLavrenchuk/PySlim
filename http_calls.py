@@ -492,7 +492,7 @@ class BodyFromTable(RestTools):
                     self.processRow(data, id)
 
         self.makeRequestWithBody()
-
+    
     def makeUrl(self, data, id):
         if not id:
             return self.url
@@ -525,6 +525,10 @@ class BodyFromTable(RestTools):
         pass
 
 
+class Get(BodyFromTable):
+    def __init__(self, url):
+        BodyFromTable.__init__(self, "GET", url)
+        
 class Post(BodyFromTable):
     def __init__(self, url, count=1, query=None, args=None):
         BodyFromTable.__init__(self, "POST", url, count, query, args)
