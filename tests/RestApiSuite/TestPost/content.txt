@@ -1,12 +1,20 @@
 !|post|${URL}/delete/users|
 
-!|post    |${URL}/users|
-|FirstName|LastName    |
-|Tony     |Soprano     |
-|Jennifer |Melfi       |
+!|post    |${URL}/users    |
+|FirstName|LastName|IsMafia|
+|Tony     |Soprano |True   |
+|Jennifer |Melfi   |False  |
 
-!|Query:http result as table|${URL}/users|
-|FirstName                  |LastName    |
-|Tony                       |Soprano     |
-|Jennifer                   |Melfi       |
+!|script|RestTools                       |
+|check|get_str|${URL}/users|[{"IsMafia":"True","FirstName":"Tony","LastName":"Soprano","id":1},{"IsMafia":"False","FirstName":"Jennifer","LastName":"Melfi","id":2}]|
+
+
+
+
+!|Query:http result as table|${URL}/users    |
+|FirstName                  |LastName|IsMafia|
+|Tony                       |Soprano |True   |
+|Jennifer                   |Melfi   |False  |
+
+
 
