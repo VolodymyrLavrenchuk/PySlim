@@ -1,6 +1,7 @@
 from waferslim.converters import convert_arg, convert_result, StrConverter
 
 import json
+from collections import OrderedDict
 import re
 import time
 import urllib
@@ -133,7 +134,7 @@ class RestTools(HttpCall):
             resp = self.get_str(url, args)
             if resp:
 
-                res = json.loads(resp)
+                res = json.loads(resp, object_pairs_hook=OrderedDict)
                 if type(res) == dict:
                     if g_array_field in res:
                         res = res[g_array_field]
