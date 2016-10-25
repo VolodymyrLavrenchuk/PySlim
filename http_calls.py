@@ -1,7 +1,6 @@
 from waferslim.converters import convert_arg, convert_result, StrConverter
 
 import json
-from collections import OrderedDict
 import re
 import time
 import urllib
@@ -434,7 +433,7 @@ class BodyFromTable(RestTools):
 
     def check_bool(self, val):
         
-        if isinstance(val, str) and val.lower() == "false"
+        if isinstance(val, str) and val.lower() == "false":
             return False
             
         if isinstance(val, str) and val.lower() == "true"
@@ -539,10 +538,6 @@ class BodyFromTable(RestTools):
     def makeRequestWithBody(self):
         pass
 
-
-class Get(BodyFromTable):
-    def __init__(self, url):
-        BodyFromTable.__init__(self, "GET", url, self.http_headers)
         
 class Post(BodyFromTable):
     def __init__(self, url, count=1, query=None, args=None):
