@@ -434,10 +434,10 @@ class BodyFromTable(RestTools):
 
     def check_bool(self, val):
         
-        if isinstance(val, str) and val.lower() == "false"
+        if isinstance(val, str) and val.lower() == "false":
             return False
             
-        if isinstance(val, str) and val.lower() == "true"
+        if isinstance(val, str) and val.lower() == "true":
             return True
 
         return val

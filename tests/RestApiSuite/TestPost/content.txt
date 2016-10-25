@@ -6,7 +6,7 @@
 |Jennifer |Melfi   |False  |
 
 !|script|RestTools                       |
-|check|get_json_str|${URL}/users|[{"FirstName": "Tony", "IsMafia": "True", "LastName": "Soprano", "id": 1}, {"FirstName": "Jennifer", "IsMafia": "False", "LastName": "Melfi", "id": 2}]|
+|check|get_json_str|${URL}/users|[{"FirstName": "Tony", "IsMafia": true, "LastName": "Soprano", "id": 1}, {"FirstName": "Jennifer", "IsMafia": false, "LastName": "Melfi", "id": 2}]|
 
 
 
