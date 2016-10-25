@@ -133,7 +133,7 @@ class RestTools(HttpCall):
             resp = self.get_str(url, args)
             if resp:
 
-                res = json.loads(resp, object_pairs_hook=OrderedDict)
+                res = json.loads(resp)
                 if type(res) == dict:
                     if g_array_field in res:
                         res = res[g_array_field]
@@ -145,7 +145,7 @@ class RestTools(HttpCall):
         return res
         
     def get_json_str(self, url, args=None):
-        return str(self.get_json(url,args))
+        return json.dumps(self.get_json(url,args),sort_keys=True)
 
     def get_attr_by_type(self, data, attr):
 
@@ -436,7 +436,7 @@ class BodyFromTable(RestTools):
         if isinstance(val, str) and val.lower() == "false":
             return False
             
-        if isinstance(val, str) and val.lower() == "true"
+        if isinstance(val, str) and val.lower() == "true":
             return True
 
         return val
