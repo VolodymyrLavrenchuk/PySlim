@@ -432,13 +432,23 @@ class BodyFromTable(RestTools):
         self.query = query
         self.args = args
 
+    def check_bool(self, val):
+        
+        if isinstance(val, str) and val.lower() == "false"
+            return False
+            
+        if isinstance(val, str) and val.lower() == "true"
+            return True
+
+        return val
+        
     def check_dict(self, val):
 
         val = self.parse_json(val)
 
         if isinstance(val, str) and val.startswith("["):
             return val[1:len(val) - 1].split(",")
-
+        
         return val
 
     @convert_arg(to_type=dict)
@@ -491,7 +501,8 @@ class BodyFromTable(RestTools):
                             pass
                         else:
                             if not self.isUndefined(row[idx]):
-                                data[header[idx]] = self.check_hashtable(self.check_dict(row[idx]))
+                                val = row[idx]                                                            
+                                data[header[idx]] = self.check_hashtable(self.check_dict(self.check_bool(val)))
 
                     self.processRow(data, id)
 
