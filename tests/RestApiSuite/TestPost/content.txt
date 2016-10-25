@@ -5,11 +5,6 @@
 |Tony     |Soprano |True   |
 |Jennifer |Melfi   |False  |
 
-!|script|RestTools                       |
-|check|get_json_str|${URL}/users|[{"FirstName": "Tony", "IsMafia": true, "LastName": "Soprano", "id": 1}, {"FirstName": "Jennifer", "IsMafia": false, "LastName": "Melfi", "id": 2}]|
-
-
-
 
 !|Query:http result as table|${URL}/users    |
 |FirstName                  |LastName|IsMafia|
