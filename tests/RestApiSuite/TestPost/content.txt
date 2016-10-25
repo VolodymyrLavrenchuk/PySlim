@@ -1,12 +1,15 @@
 !|post|${URL}/delete/users|
 
-!|post    |${URL}/users|
-|FirstName|LastName    |
-|Tony     |Soprano     |
-|Jennifer |Melfi       |
+!|post    |${URL}/users    |
+|FirstName|LastName|IsMafia|
+|Tony     |Soprano |True   |
+|Jennifer |Melfi   |False  |
 
-!|Query:http result as table|${URL}/users|
-|FirstName                  |LastName    |
-|Tony                       |Soprano     |
-|Jennifer                   |Melfi       |
+
+!|Query:http result as table|${URL}/users    |
+|FirstName                  |LastName|IsMafia|
+|Tony                       |Soprano |True   |
+|Jennifer                   |Melfi   |False  |
+
+
 
