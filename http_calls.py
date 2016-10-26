@@ -116,8 +116,11 @@ class RestTools(HttpCall):
         return json.dumps(self.get_json(url),sort_keys=True)
     
     def getRequest(self, url, data=None, headers={}):
+        print('g_headers: %s' % g_headers)
         headers.update(g_headers)
-        return self.request(self.get_full_url(url), data.encode('utf-8'), headers)
+        if data is not None:
+            data = data.encode('utf-8')
+        return self.request(self.get_full_url(url), data, headers)
 
     def get_str(self, url, args=None):
         return self.GET(self.get_full_url(url), {}, args).decode('utf-8') #'Accept': 'application/json'
@@ -253,6 +256,18 @@ class RestTools(HttpCall):
     def makeLine(self, line):
 
         return line.replace('\n', '\\n')
+
+
+    def GET(self, url, data="", headers=""):
+
+        data = data.replace('\n', '\r\n')
+        print('get request: %s, headers: %s' % (url, headers))
+
+        req = self.getRequest(url)
+        req.get_method = lambda: 'GET'
+
+
+        return self.read(req)
 
     def POST(self, url, data="", headers=""):
 
@@ -558,6 +573,13 @@ class BodyFromTable(RestTools):
     def makeRequestWithBody(self):
         pass
 
+
+class WaitAttributes(BodyFromTable):
+    def __init__(self, url, count=1, query=None, args=None):
+        BodyFromTable.__init__(self, "GET", url, count, query, args)
+
+    def processRow(self, data, id):
+        print('processing row: %s' % data)
         
 class Post(BodyFromTable):
     def __init__(self, url, count=1, query=None, args=None):
