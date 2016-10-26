@@ -285,6 +285,19 @@ class RestTools(HttpCall):
 
         global lastRequestResult
         return json.loads(lastRequestResult)[AttrName]
+        
+    def findAttrubureByName(self, )
+    
+        global lastRequestResult
+        res = json.loads(lastRequestResult)
+        
+        if type(res) == dict:
+            if g_array_field in res:
+                res = res[g_array_field]
+                
+        
+    
+    
 
     def getRawRequestResult(self):
 
