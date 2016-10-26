@@ -285,6 +285,19 @@ class RestTools(HttpCall):
 
         global lastRequestResult
         return json.loads(lastRequestResult)[AttrName]
+        
+    def findAttributeByName(self, keyName, keyValue, attrName):
+    
+        global lastRequestResult
+        res = json.loads(lastRequestResult)
+        
+        if type(res) == dict:
+            if g_array_field in res:
+                res = res[g_array_field]
+                
+        return [r[attrName] for r in res if r[keyName] == keyValue][0]
+    
+    
 
     def getRawRequestResult(self):
 
