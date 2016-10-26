@@ -286,7 +286,7 @@ class RestTools(HttpCall):
         global lastRequestResult
         return json.loads(lastRequestResult)[AttrName]
         
-    def findAttrubureByName(self, )
+    def findAttributeByName(self, keyName, keyValue, attrName):
     
         global lastRequestResult
         res = json.loads(lastRequestResult)
@@ -295,7 +295,7 @@ class RestTools(HttpCall):
             if g_array_field in res:
                 res = res[g_array_field]
                 
-        
+        return [r[attrName] for r in res if r[keyName] == keyValue][0]
     
     
 
