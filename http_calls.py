@@ -36,7 +36,11 @@ class HttpCall:
             lastResponse = res = urllib.request.urlopen(req)
             print("Response statusCode: %s" % res.getcode())
             print("Response headers: %s" % res.info())
-
+        except urllib.error.HTTPError as e:
+            lastResponse = lastRequestError = res = e
+            print("Response error: %s" % e)
+            contents = e.read()
+            raise Exception("Response error %s, result: %s" % (e, contents))
         except BaseException as e:
             lastResponse = lastRequestError = res = e
             print("Response error: %s" % e)
@@ -116,7 +120,7 @@ class RestTools(HttpCall):
         return self.request(self.get_full_url(url), data.encode('utf-8'), headers)
 
     def get_str(self, url, args=None):
-        return self.GET(self.get_full_url(url), {'Accept': 'application/json'}, args).decode('utf-8')
+        return self.GET(self.get_full_url(url), {}, args).decode('utf-8') #'Accept': 'application/json'
 
     def get_hex_str(self, url, args=None):
         resp = self.get_str(url, args)
@@ -134,9 +138,15 @@ class RestTools(HttpCall):
         try:
             res = []
             resp = self.get_str(url, args)
+
             if resp:
 
                 res = json.loads(resp)
+                print('json: %s' % res)
+                if 'value' in res:
+                    res = res['value']
+                print('json: %s' % res)
+
                 if type(res) == dict:
                     if g_array_field in res:
                         res = res[g_array_field]
@@ -205,6 +215,7 @@ class RestTools(HttpCall):
 
         result = self.wait(wait_sec, retries, func, attr=attr, url=url)
         if result is False:
+            print('required val: %s' % value)
             raise Exception('Actual value: %s' % self.getAttributeFromResponse(attr, url))
 
         return result
@@ -321,11 +332,17 @@ class HttpResultAsTable(RestTools, Execute):
 
         values = []
 
+        print('table result: %s ' % self.result)
+
+        if 'value' in self.result:
+            self.result = self.result['value']
+
         if not type(self.result) == list:
             self.result = [self.result]
 
+        print('table result: %s ' % self.result)
         for row in self.result:
-
+            print("row: %s" % row)
             item = {}
             for key in self.header:
 
@@ -355,9 +372,10 @@ class HttpResultAsTable(RestTools, Execute):
                             val = ''
 
                     item[key] = val
-
+            print('append item: %s' % item)
             values.append(item)
 
+        print('astable: %s' % values)
         return values, self.header
 
     def table(self, table):
