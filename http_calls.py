@@ -37,6 +37,13 @@ class HttpCall:
             print("Response statusCode: %s" % res.getcode())
             print("Response headers: %s" % res.info())
 
+        except urllib.error.HTTPError as e:
+
+            lastResponse = res = e
+
+            print("Response statusCode: %s" % res.getcode())
+            print("Response headers: %s" % res.info())
+
         except BaseException as e:
             lastResponse = lastRequestError = res = e
             print("Response error: %s" % e)
