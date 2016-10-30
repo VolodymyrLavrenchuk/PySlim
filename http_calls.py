@@ -488,6 +488,7 @@ class BodyFromTable(RestTools):
         try:
             return json.loads(val)
         except BaseException as e:
+            print(str(e))
             return val
 
     def isUndefined(self, val):
