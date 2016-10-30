@@ -1,6 +1,7 @@
 from waferslim.converters import convert_arg, convert_result, StrConverter
 
 import json
+import ast
 import re
 import time
 import urllib
@@ -466,13 +467,10 @@ class BodyFromTable(RestTools):
     def check_dict(self, val):
 
         val = self.parse_json(val)
-        print('Parse:' + str(val))
-        print('Parse:' + str(val)[0])
-        print('Parse:' + str(val)[-1])
-        print(val.__class__)
-        
-        if isinstance(val, str) and val.startswith("["):
-            return val[1:len(val) - 1].split(",")
+               
+        if isinstance(val, str) and (val.startswith("[") or val.startswith("{")):
+            return ast.literal_eval(val)
+            #return val[1:len(val) - 1].split(",")
         
         return val
 
