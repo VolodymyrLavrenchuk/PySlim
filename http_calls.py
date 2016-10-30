@@ -466,7 +466,9 @@ class BodyFromTable(RestTools):
     def check_dict(self, val):
 
         val = self.parse_json(val)
-
+        print('Parse:' + str(val))
+        print(val.__class__)
+        
         if isinstance(val, str) and val.startswith("["):
             return val[1:len(val) - 1].split(",")
         
