@@ -468,8 +468,11 @@ class BodyFromTable(RestTools):
 
         val = self.parse_json(val)
                
-        if isinstance(val, str) and (val.startswith("[") or val.startswith("{")):
-            return ast.literal_eval(val)
+        if isinstance(val, str):
+            if val.startswith("["):
+                return val[1:len(val) - 1].split(",")
+            if val.startswith("{")):
+                return ast.literal_eval(val)
                     
         return val
 
@@ -486,7 +489,7 @@ class BodyFromTable(RestTools):
     def parse_json(self, val):
         try:
             return json.loads(val)
-        except BaseException as e:           
+        except BaseException as e:            
             return val
 
     def isUndefined(self, val):
