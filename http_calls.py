@@ -470,8 +470,7 @@ class BodyFromTable(RestTools):
                
         if isinstance(val, str) and (val.startswith("[") or val.startswith("{")):
             return ast.literal_eval(val)
-            #return val[1:len(val) - 1].split(",")
-        
+                    
         return val
 
     @convert_arg(to_type=dict)
@@ -487,8 +486,7 @@ class BodyFromTable(RestTools):
     def parse_json(self, val):
         try:
             return json.loads(val)
-        except BaseException as e:
-            print(str(e))
+        except BaseException as e:           
             return val
 
     def isUndefined(self, val):
