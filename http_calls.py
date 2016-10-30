@@ -467,6 +467,8 @@ class BodyFromTable(RestTools):
 
         val = self.parse_json(val)
         print('Parse:' + str(val))
+        print('Parse:' + str(val)[0])
+        print('Parse:' + str(val)[-1])
         print(val.__class__)
         
         if isinstance(val, str) and val.startswith("["):
