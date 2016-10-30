@@ -471,7 +471,7 @@ class BodyFromTable(RestTools):
         if isinstance(val, str):
             if val.startswith("["):
                 return val[1:len(val) - 1].split(",")
-            if val.startswith("{")):
+            if val.startswith("{"):
                 return ast.literal_eval(val)
                     
         return val
