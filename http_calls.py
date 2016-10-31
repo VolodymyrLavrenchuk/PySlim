@@ -90,6 +90,11 @@ class HttpCall:
 
         global g_array_field
         g_array_field = value
+        
+    def NoArrayField(self):
+
+        global g_array_field
+        g_array_field = None
 
     def Header(self, h, v):
 
