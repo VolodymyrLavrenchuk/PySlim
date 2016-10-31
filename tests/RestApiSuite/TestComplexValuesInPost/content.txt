@@ -1,0 +1,12 @@
+!|post|${URL}/delete/users|
+
+!|post    |${URL}/users    |
+|FirstName|LastName|IsMafia|Age        |
+|Tony     |Soprano |True   |22         |
+|Jennifer |Melfi   |False  |{"Agent":45, "Real":33}|
+
+
+!|script|RestTools                                                                                                                                                                               |
+|check  |format_raw_get|${URL}/users|[{"Age": 22, "FirstName": "Tony", "IsMafia": true, "LastName": "Soprano", "id": 1}, {"Age": {"Agent": 45, "Real": 33}, "FirstName": "Jennifer", "IsMafia": false, "LastName": "Melfi", "id": 2}]|
+
+

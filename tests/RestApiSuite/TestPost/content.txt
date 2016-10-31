@@ -1,15 +1,15 @@
 !|post|${URL}/delete/users|
 
-!|post    |${URL}/users    |
-|FirstName|LastName|IsMafia|
-|Tony     |Soprano |True   |
-|Jennifer |Melfi   |False  |
+!|post    |${URL}/users                |
+|FirstName|LastName|IsMafia|Age        |
+|Tony     |Soprano |True   |22         |
+|Jennifer |Melfi   |False  |{"Real":33}|
 
 
-!|Query:http result as table|${URL}/users    |
-|FirstName                  |LastName|IsMafia|
-|Tony                       |Soprano |True   |
-|Jennifer                   |Melfi   |False  |
+!|Query:http result as table|${URL}/users        |
+|FirstName                  |LastName|IsMafia|Age|
+|Tony                       |Soprano |True   |   |
+|Jennifer                   |Melfi   |False  |   |
 
 
 
