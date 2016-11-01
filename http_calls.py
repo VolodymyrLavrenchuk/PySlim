@@ -213,10 +213,7 @@ class RestTools(HttpCall):
                 return False
 
         result = self.wait(wait_sec, retries, func, attr=attr, url=url)
-        if result is False:
-            raise Exception('Actual value: %s' % self.getAttributeFromResponse(attr, url))
-
-        return result
+        return result 
 
     def waitSecondTimesUrlResponseAttributeNotZero(self, wait_sec, retries, url, attr):
         def func(args):
