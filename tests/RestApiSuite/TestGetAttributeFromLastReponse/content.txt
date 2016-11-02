@@ -1,0 +1,7 @@
+!|post    |${URL}/users        |
+|FirstName|LastName|IsMafia|Age|
+|Tony     |Soprano |True   |22 |
+
+-!|script|RestTools|
+|check|get attribute|LastName|from last response|Soprano|
+|check|get attribute|IsMafia |from last response|true   |
