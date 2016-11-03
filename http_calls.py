@@ -1,6 +1,7 @@
 from waferslim.converters import convert_arg, convert_result, StrConverter
 
 import json
+import ast
 import re
 import time
 import urllib
@@ -36,6 +37,13 @@ class HttpCall:
             global lastResponse
             gcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23) if req.get_full_url().startswith("https://") else None  # default SSL context has problems with running compiled with pyinstaller on AWS LAMBDA
             lastResponse = res = urllib.request.urlopen(req, context = gcontext)
+            print("Response statusCode: %s" % res.getcode())
+            print("Response headers: %s" % res.info())
+
+        except urllib.error.HTTPError as e:
+
+            lastResponse = res = e
+
             print("Response statusCode: %s" % res.getcode())
             print("Response headers: %s" % res.info())
 
@@ -84,6 +92,7 @@ class HttpCall:
 
         global g_array_field
         g_array_field = value
+        
 
     def Header(self, h, v):
 
@@ -171,6 +180,13 @@ class RestTools(HttpCall):
 
         return res
 
+    def getAttributeFromLastResponse(self, attr):
+
+        import json
+        res = json.loads(lastRequestResult)
+
+        return self.get_attr_by_type(res, attr)
+
     def getAttributeFromResponse(self, attr, url, args=None):
         return self.get_attr_by_type(self.get_json(url, args), attr)
 
@@ -206,10 +222,7 @@ class RestTools(HttpCall):
                 return False
 
         result = self.wait(wait_sec, retries, func, attr=attr, url=url)
-        if result is False:
-            raise Exception('Actual value: %s' % self.getAttributeFromResponse(attr, url))
-
-        return result
+        return result 
 
     def waitSecondTimesUrlResponseAttributeNotZero(self, wait_sec, retries, url, attr):
         def func(args):
@@ -287,6 +300,19 @@ class RestTools(HttpCall):
 
         global lastRequestResult
         return json.loads(lastRequestResult)[AttrName]
+        
+    def findAttributeByName(self, keyName, keyValue, attrName):
+    
+        global lastRequestResult
+        res = json.loads(lastRequestResult)
+        
+        if type(res) == dict:
+            if g_array_field in res:
+                res = res[g_array_field]
+                
+        return [r[attrName] for r in res if r[keyName] == keyValue][0]
+    
+    
 
     def getRawRequestResult(self):
 
@@ -448,10 +474,13 @@ class BodyFromTable(RestTools):
     def check_dict(self, val):
 
         val = self.parse_json(val)
-
-        if isinstance(val, str) and val.startswith("["):
-            return val[1:len(val) - 1].split(",")
-        
+               
+        if isinstance(val, str):
+            if val.startswith("["):
+                return val[1:len(val) - 1].split(",")
+            if val.startswith("{"):
+                return ast.literal_eval(val)
+                    
         return val
 
     @convert_arg(to_type=dict)
@@ -467,7 +496,7 @@ class BodyFromTable(RestTools):
     def parse_json(self, val):
         try:
             return json.loads(val)
-        except BaseException as e:
+        except BaseException as e:            
             return val
 
     def isUndefined(self, val):

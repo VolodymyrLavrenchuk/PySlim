@@ -1,0 +1,3 @@
+!|script|RestTools                          |
+|check  |GET            |${URL}/nobody|b'{}'|
+|check  |get status code|404                |

@@ -1,0 +1,21 @@
+!|post    |${URL}/users|
+|FirstName|LastName    |
+|Tony     |Soprano     |
+|Jennifer |Melfi       |
+
+
+!define FIELD {array}
+
+!|script             |
+|Array Field|${FIELD}|
+
+!|query:http result as table|${URL}/packed/users?|field=${FIELD}|
+|FirstName                  |LastName                           |
+|Tony                       |Soprano                            |
+|Jennifer                   |Melfi                              |
+
+
+!|script       |RestTools                 |
+|check|findAttributeByName;|FirstName|Jennifer|LastName|Melfi|
+
+
