@@ -308,9 +308,9 @@ class RestTools(HttpCall):
             if g_array_field in res:
                 res = res[g_array_field]
                 
-        return [r[attrName] for r in res if r[keyName] == keyValue][0]
-    
-    
+        val = [r[attrName] for r in res if r[keyName] == keyValue]
+                
+        return val and val[0] or None
 
     def getRawRequestResult(self):
 
