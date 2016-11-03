@@ -17,5 +17,6 @@
 
 !|script       |RestTools                 |
 |check|findAttributeByName;|FirstName|Jennifer|LastName|Melfi|
+|check|findAttributeByName;|FirstName|Tom|LastName|/__VOID__/|
 
 
