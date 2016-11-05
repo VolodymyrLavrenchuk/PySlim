@@ -178,11 +178,20 @@ class RestTools(HttpCall):
 
         return res
 
+    def unpack(self,res):
+
+        if type(res) == dict:
+            if g_array_field in res:
+                res = res[g_array_field]
+
+        return res
+
     def getAttributeFromLastResponse(self, attr):
 
         import json
         res = json.loads(lastRequestResult)
 
+        res = self.unpack(res)
         return self.get_attr_by_type(res, attr)
 
     def getAttributeFromResponse(self, attr, url, args=None):
