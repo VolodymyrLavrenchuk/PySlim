@@ -21,3 +21,11 @@
 |check|get attribute|LastName|from last response|Soprano|
 |check|get attribute|IsMafia |from last response|true   |
 
+!|query:http result as table|${URL}/packed/users?|field=${FIELD}&twice=true|
+|FirstName                  |LastName                                      |
+|Tony                       |Soprano                                       |
+
+-!|script|RestTools|
+|check|get attribute|value[0].LastName|from last response|Soprano|
+|check|get attribute|value[0].IsMafia |from last response|true   |
+
