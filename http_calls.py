@@ -8,6 +8,8 @@ import urllib
 import urllib.request
 from socket import error as socket_error
 import ssl
+import base64
+import hashlib
 
 from .ExecuteQuery import Execute
 from .date_utils import DateUtils
@@ -257,6 +259,10 @@ class RestTools(HttpCall):
     def makeLine(self, line):
 
         return line.replace('\n', '\\n')
+
+    def shortHash( self, line ):
+
+        return str( base64.urlsafe_b64encode( hashlib.md5( line.encode( 'utf-8' ) ).digest() ), 'utf-8' )[ 0:16 ]
 
     def POST(self, url, data="", headers=""):
 
