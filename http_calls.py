@@ -220,9 +220,12 @@ class RestTools(HttpCall):
         def func(args):
 
             resp = self.getAttributeFromResponse(args["attr"], args["url"])
+            
+            if(resp is None):
+                return False
 
             resp_type = type(resp)
-
+            
             try:
                 return resp == resp_type(value)
             except ValueError:
