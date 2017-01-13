@@ -1,5 +1,5 @@
 -!|script|RestTools|
-|show|wait|0.2|second|2|times url|${URL}/none|response attribute|firstName|has value|Tony|
+|wait|0.2|second|2|times url|${URL}/none|response attribute|firstName|has value|Tony|
 
 -!|script|RestTools|
-|show|wait|0.2|second|2|times url|${URL}/none|response attribute|secondName|has value|Carmela|
+|check|wait|0.2|second|2|times url|${URL}/none|response attribute|secondName|has value|Carmela|false|
