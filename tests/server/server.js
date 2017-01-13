@@ -14,6 +14,13 @@ server.all("/headers", (req, res)=>{
     res.json(req.headers);
 });
 
+server.get("/none", (req,res) => {
+    res.json({
+        firstName: "Tony",
+        secondName: null
+    });
+})
+
 server.all("/packed/users", (req, res)=>{
 
     let users = router.db
