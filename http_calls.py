@@ -246,6 +246,17 @@ class RestTools(HttpCall):
 
         return self.wait(wait_sec, retries, func, attr=attr, url=url)
 
+    def waitSecondTimesUrlResponseAttributeNotEmpty(self, wait_sec, retries, url, attr):
+        def func(args):
+
+            resp = self.getAttributeFromResponse(args["attr"], args["url"])
+
+            if resp:
+                return True
+            return False
+
+        return self.wait(wait_sec, retries, func, attr=attr, url=url)
+
     def waitSecondTimesUrlHasValidResponse(self, wait_sec, retries, url):
 
         def func(args):
