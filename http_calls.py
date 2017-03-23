@@ -164,11 +164,12 @@ class RestTools(HttpCall):
         index = 0
         for a in attr.split('.'):
 
-            print(a)
             match = re.match('^(\w*)\[([0-9])\]', a)
             if match:
                 a = match.group(1)
                 index = int(match.group(2))
+                print(a)
+                print(index)
 
             if len(res) > 0:
                 types = {
