@@ -7,6 +7,7 @@ import time
 import urllib
 import urllib.request
 from socket import error as socket_error
+import ssl
 
 from .ExecuteQuery import Execute
 from .date_utils import DateUtils
@@ -34,7 +35,8 @@ class HttpCall:
             if req.data is not None:
                 print("Request body: %s" % req.data)
             global lastResponse
-            lastResponse = res = urllib.request.urlopen(req)
+            gcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23) if req.get_full_url().startswith("https://") else None  # default SSL context has problems with running compiled with pyinstaller on AWS LAMBDA
+            lastResponse = res = urllib.request.urlopen(req, context = gcontext)
             print("Response statusCode: %s" % res.getcode())
             print("Response headers: %s" % res.info())
 
