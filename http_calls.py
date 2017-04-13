@@ -8,8 +8,8 @@ import urllib
 import urllib.request
 from socket import error as socket_error
 
-from .ExecuteQuery import Execute
-from .date_utils import DateUtils
+from ExecuteQuery import Execute
+from date_utils import DateUtils
 
 global lastRequestError
 global lastResponse
@@ -392,7 +392,7 @@ class HttpResultAsTable(RestTools, Execute):
                                 if isinstance(val, list) and k.isdigit():
                                     k = int(k)
                                 elif isinstance(val, dict) and k.isdigit():
-                                    k = val.keys()[int(k)]
+                                    k = list(val.keys())[int(k)]
 
                                 print(val)    
                                 print(k)    
@@ -428,7 +428,10 @@ class LastResultAsTable(HttpResultAsTable):
         global lastRequestResult
 
         o = json.loads(lastRequestResult)
-        self.result = o['hits']['hits']
+        if(type(o) == dict and "hits" in o):
+            self.result = o['hits']['hits']
+        elif(type(o) == dict and "docs" in o):
+            self.result = o['docs']
         print('OUTPUT: ', self.result)
 
 
