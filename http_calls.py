@@ -4,6 +4,7 @@ import json
 import ast
 import re
 import time
+import codecs
 import urllib
 import urllib.request
 from socket import error as socket_error
@@ -77,8 +78,8 @@ class HttpCall:
             try:
               lastRequestResult = ret.decode('utf-8')
             except BaseException as e:
-              print("Can`t decode utf-8. Try to use koi8-r")
-              lastRequestResult = ret.decode('koi8-r')
+              print("Can`t decode utf-8. Return as is")
+              lastRequestResult = ret
 
         return ret
 
@@ -434,6 +435,7 @@ class LastResultAsTable(HttpResultAsTable):
         global lastRequestResult
 
         o = json.loads(lastRequestResult)
+
         if(type(o) == dict and "hits" in o):
             self.result = o['hits']['hits']
         elif(type(o) == dict and "docs" in o):
