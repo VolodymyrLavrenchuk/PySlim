@@ -1,0 +1,14 @@
+-!|script|RestTools                                                                  |
+|POST |${URL}/users   ||{"hits": {"hits": {"FirstName": "Tony", "LastName": "Soprano", "Age": {"Real": 46}}}}|
+|check|get status code|201                                                                         |
+
+When response data is in "hits.hits" key, fixture must return it`s content omitting all "hits" keys:
+
+-!|script|RestTools                                                                  |
+|GET|${URL}/users/1|
+
+!|Query:last result as table|
+|FirstName     |LastName    |
+|Tony          |Soprano     |
+
+
