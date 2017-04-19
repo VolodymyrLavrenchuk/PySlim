@@ -455,14 +455,7 @@ class ResponseAsTable(HttpResultAsTable):
             body = body[g_array_field]
 
         global lastResponse
-        print(lastResponse.info())
-
-        self.result = {
-          'status_code': lastResponse.getcode(),
-          'headers': lastResponse.info().dict if lastResponse.info() is dict else lastResponse.info(),
-          'body': body
-        }
-
+        self.result = {'status_code': lastResponse.getcode(), 'headers': lastResponse.info(), 'body': body}
 
 class LastResponseAsTable(HttpResultAsTable):
     def __init__(self):
