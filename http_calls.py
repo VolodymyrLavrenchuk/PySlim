@@ -8,8 +8,8 @@ import urllib
 import urllib.request
 from socket import error as socket_error
 
-from ExecuteQuery import Execute
-from date_utils import DateUtils
+from .ExecuteQuery import Execute
+from .date_utils import DateUtils
 
 global lastRequestError
 global lastResponse
