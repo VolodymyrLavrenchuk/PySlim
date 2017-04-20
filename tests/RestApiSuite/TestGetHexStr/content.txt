@@ -1,0 +1,6 @@
+!|post    |${URL}/users        |
+|FirstName|
+|Tony     |
+
+-!|script|RestTools|
+|check    |get_hex_str|${URL}/users/1|7b0a20202246697273744e616d65223a2022546f6e79222c0a2020226964223a20310a7d|

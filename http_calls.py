@@ -35,18 +35,21 @@ class HttpCall:
                 print("Request body: %s" % req.data)
             global lastResponse
             lastResponse = res = urllib.request.urlopen(req)
+            print("Success.")
             print("Response statusCode: %s" % res.getcode())
             print("Response headers: %s" % res.info())
 
         except urllib.error.HTTPError as e:
 
-            lastResponse = res = e
+            lastResponse = lastRequestError = res = e
 
+            print("HTTPError")
             print("Response statusCode: %s" % res.getcode())
             print("Response headers: %s" % res.info())
 
         except BaseException as e:
             lastResponse = lastRequestError = res = e
+            print("BaseException")
             print("Response error: %s" % e)
             raise Exception("Response error %s" % e)
 
@@ -71,8 +74,11 @@ class HttpCall:
             ret = resp.read()
             print("Response body: %s" % ret)
             global lastRequestResult
-
-            lastRequestResult = ret.decode('utf-8')
+            try:
+              lastRequestResult = ret.decode('utf-8')
+            except BaseException as e:
+              print("Can`t decode utf-8. Return as is")
+              lastRequestResult = ret
 
         return ret
 
@@ -128,9 +134,9 @@ class RestTools(HttpCall):
         return self.GET(self.get_full_url(url), {'Accept': 'application/json'}, args).decode('utf-8')
 
     def get_hex_str(self, url, args=None):
-        resp = self.get_str(url, args)
+        resp = self.GET(self.get_full_url(url), {'Accept': 'application/json'}, args)
         import binascii
-        return binascii.hexlify(resp)
+        return binascii.hexlify(resp).decode('utf-8')
 
     def searchRegexpInHtml(self, pattern, url):
 
@@ -392,7 +398,7 @@ class HttpResultAsTable(RestTools, Execute):
                                 if isinstance(val, list) and k.isdigit():
                                     k = int(k)
                                 elif isinstance(val, dict) and k.isdigit():
-                                    k = val.keys()[int(k)]
+                                    k = list(val.keys())[int(k)]
 
                                 print(val)    
                                 print(k)    
@@ -428,7 +434,11 @@ class LastResultAsTable(HttpResultAsTable):
         global lastRequestResult
 
         o = json.loads(lastRequestResult)
-        self.result = o['hits']['hits']
+
+        if(type(o) == dict and "hits" in o):
+            self.result = o['hits']['hits']
+        elif(type(o) == dict and "docs" in o):
+            self.result = o['docs']
         print('OUTPUT: ', self.result)
 
 
@@ -447,9 +457,7 @@ class ResponseAsTable(HttpResultAsTable):
 
         global lastResponse
         print(lastResponse.info())
-
-        self.result = {'status_code': lastResponse.getcode(), 'headers': lastResponse.info().dict, 'body': body}
-
+        self.result = {'status_code': lastResponse.getcode(), 'headers': lastResponse.info(), 'body': body}
 
 class LastResponseAsTable(HttpResultAsTable):
     def __init__(self):

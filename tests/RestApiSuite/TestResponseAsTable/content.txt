@@ -1,0 +1,13 @@
+!|post    |${URL}/users        |
+|FirstName|LastName|IsMafia|Age|
+|Tony     |Soprano |True   |22 |
+
+!define FIELD {value}
+
+!|script             |
+|Array Field|${FIELD}|
+
+!|query:response as table|${URL}/packed/users?               |field=${FIELD}  |
+|status_code             |headers                            |body            |
+|200                     |=~/Content-Type: application\/json/|=~/'FirstName': 'Tony'/|
+
