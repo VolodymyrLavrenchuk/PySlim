@@ -4,7 +4,6 @@ import json
 import ast
 import re
 import time
-import codecs
 import urllib
 import urllib.request
 from socket import error as socket_error
