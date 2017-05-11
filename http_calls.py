@@ -82,15 +82,17 @@ class HttpCall:
 
         return ret
 
-    def GET(self, url, headers={}, args=None):
+    def GET( self, url, headers = {}, args = None ):
 
-        headers.update(g_headers)
+        headers.update( g_headers )
+        headers = { k: v for k, v in headers.items() if v != "" }
 
         if args:
-            url = url + urllib.parse.quote(args, '=&')
-        req = self.request(url, None, headers)
+            url = url + urllib.parse.quote( args, '=&' )
 
-        return self.read(req)
+        req = self.request( url, None, headers )
+
+        return self.read( req )
 
     def ArrayField(self, value):
 
