@@ -84,13 +84,16 @@ class HttpCall:
 
     def GET( self, url, headers = {}, args = None ):
 
-        headers.update( g_headers )
-        headers = { k: v for k, v in headers.items() if v != "" }
+        rqHeaders = {}
+        rqHeaders.update( g_headers )
+        rqHeaders.update( headers )
+
+        rqHeaders = { k: v for k, v in rqHeaders.items() if v != "" }
 
         if args:
             url = url + urllib.parse.quote( args, '=&' )
 
-        req = self.request( url, None, headers )
+        req = self.request( url, None, rqHeaders )
 
         return self.read( req )
 
