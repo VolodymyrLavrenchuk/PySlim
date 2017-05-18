@@ -84,6 +84,9 @@ class HttpCall:
 
     def GET( self, url, headers = {}, args = None ):
 
+        if type( headers ) == str:
+          headers = json.loads( headers ) if len( headers ) > 0 else {}
+
         rqHeaders = {}
         rqHeaders.update( g_headers )
         rqHeaders.update( headers )

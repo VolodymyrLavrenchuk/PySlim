@@ -2,7 +2,6 @@
 |Header|Content-Type |=|application/pyslim|
 |Header|Authorization|=|Bearer One        |
 
-
 !|Query:http result as table|http://py_slim_server:3000/headers|
 |content-type               |authorization                     |
 |application/pyslim         |Bearer One                        |
@@ -45,4 +44,25 @@
 |content-type          |skip    |
 |application/pyslim    |22      |
 
+!|script|RestTools                                                                                                                |
+|GET    |http://py_slim_server:3000/headers||{ "Authorization": "", "Previous": "", "Skip": "", "Content-Type": "", "New": "Yes" }|
+|check  |get raw request result                                                                                                   |!-{
+  "accept-encoding": "identity",
+  "connection": "close",
+  "host": "py_slim_server:3000",
+  "new": "Yes",
+  "user-agent": "Python-urllib/3.5"
+}-!|
 
+!|script|RestTools                          |
+|GET    |http://py_slim_server:3000/headers||
+|check  |get raw request result             |!-{
+  "accept-encoding": "identity",
+  "authorization": "Bearer One",
+  "connection": "close",
+  "content-type": "application/pyslim",
+  "host": "py_slim_server:3000",
+  "previous": "21",
+  "skip": "22",
+  "user-agent": "Python-urllib/3.5"
+}-!|
