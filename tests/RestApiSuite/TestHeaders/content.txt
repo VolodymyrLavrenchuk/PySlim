@@ -2,7 +2,6 @@
 |Header|Content-Type |=|application/pyslim|
 |Header|Authorization|=|Bearer One        |
 
-
 !|Query:http result as table|http://py_slim_server:3000/headers|
 |content-type               |authorization                     |
 |application/pyslim         |Bearer One                        |
@@ -45,4 +44,12 @@
 |content-type          |skip    |
 |application/pyslim    |22      |
 
+!|script  |RestTools                                                                                               |
+|GET      |http://py_slim_server:3000/headers||{ "Authorization": "", "Previous": "", "One-Request-Header": "Yes" }|
+|check not|get raw request result            |=~/!-authorization|previous-!/                                       |
+|check    |get raw request result            |=~/"one-request-header": "Yes"/                                      |
 
+!|script  |RestTools                                                                                  |
+|GET      |http://py_slim_server:3000/headers|                                                        |
+|check    |get raw request result            |=~/"authorization": "Bearer One"[\s\S]*"previous": "21"/|
+|check not|get raw request result            |=~/"one-request-header"/                                |

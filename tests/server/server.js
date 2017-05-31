@@ -10,8 +10,27 @@ let middlewares = srv.defaults();
 
 server.use(middlewares);
 
-server.all("/headers", (req, res)=>{
-    res.json(req.headers);
+function sortObject( obj ) {
+
+  if ( typeof( obj ) !== 'object' || obj === null ) {
+
+    return obj;
+  }
+
+  let sorted = {};
+  let keys = Object.keys( obj ).sort();
+
+  keys.forEach( function( key ) {
+
+    sorted[ key ] = sortObject( obj[ key ] );
+  });
+
+  return sorted;
+}
+
+server.all( "/headers", ( req, res ) => {
+
+  res.json( sortObject( req.headers ) );
 });
 
 server.get("/none", (req,res) => {
