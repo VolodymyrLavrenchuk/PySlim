@@ -4,6 +4,7 @@ import json
 import ast
 import re
 import time
+import traceback
 import urllib
 import urllib.request
 from socket import error as socket_error
@@ -223,8 +224,13 @@ class RestTools(HttpCall):
     def wait(self, wait_sec, retries, func, **kwargs):
 
         for r in range(int(retries)):
-            if func(kwargs):
-                return True
+            try:
+                if func(kwargs):
+                    return True
+            except Exception as e:
+                print(e)
+                traceback.print_exc()
+
             self.sleep(wait_sec)
         return False
 
