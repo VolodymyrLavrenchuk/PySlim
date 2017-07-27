@@ -52,10 +52,9 @@ server.get("/unstable", (req,res) => {
     }
     else {
         cnt += 1
-        //res.end()
-        //res.setHeader('content-type','text/javascript')
+
         res.setHeader('content-length','1000')
-        res.end(res.writeHead(500, 'bad response'))
+        res.end(res.writeHead(500, 'bad incomplete response'))
     }
 
 })

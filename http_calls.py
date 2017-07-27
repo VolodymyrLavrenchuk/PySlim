@@ -560,10 +560,6 @@ class BodyFromTable(RestTools):
                 else:
                     setattr(self, "set%s" % str.replace(h, h[0], h[0].upper(), 1), lambda x: x)
 
-            #link_ids = []
-            #if self.query:
-            #    link_ids = self.get_json(self.query, self.args)
-
             for item in range(int(self.count)):
 
                 for row in rows[1:]:
