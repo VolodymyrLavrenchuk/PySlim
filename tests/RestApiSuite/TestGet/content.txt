@@ -4,5 +4,5 @@
 
 !|Subset Query:http result as table|https://api.github.com/repos/konstantinvlasenko/powerslim/forks|
 |full_name                         |owner.login                                                    |
-|SergeyZalyadeev/PowerSlim         |SergeyZalyadeev                                                |
+|SZalyade-Quest/PowerSlim          |SZalyade-Quest                                                 |
 |DmitryKonev/PowerSlim             |DmitryKonev                                                    |

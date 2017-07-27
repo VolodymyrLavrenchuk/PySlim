@@ -4,6 +4,7 @@ import json
 import ast
 import re
 import time
+import traceback
 import urllib
 import urllib.request
 from socket import error as socket_error
@@ -154,8 +155,10 @@ class RestTools(HttpCall):
         return data.group(1)
 
     def get_json(self, url, args=None):
+        res = []
+
         try:
-            res = []
+
             resp = self.get_str(url, args)
             if resp:
 
@@ -221,8 +224,13 @@ class RestTools(HttpCall):
     def wait(self, wait_sec, retries, func, **kwargs):
 
         for r in range(int(retries)):
-            if func(kwargs):
-                return True
+            try:
+                if func(kwargs):
+                    return True
+            except Exception as e:
+                print(e)
+                traceback.print_exc()
+
             self.sleep(wait_sec)
         return False
 
@@ -442,10 +450,10 @@ class LastResultAsTable(HttpResultAsTable):
         global lastRequestResult
 
         o = json.loads(lastRequestResult)
-
-        if(type(o) == dict and "hits" in o):
+        self.result = o
+        if type(o) == dict and "hits" in o:
             self.result = o['hits']['hits']
-        elif(type(o) == dict and "docs" in o):
+        elif type(o) == dict and "docs" in o:
             self.result = o['docs']
         print('OUTPUT: ', self.result)
 
@@ -551,10 +559,6 @@ class BodyFromTable(RestTools):
                     setattr(self, "_id", lambda self=self: self.ids.pop(0))
                 else:
                     setattr(self, "set%s" % str.replace(h, h[0], h[0].upper(), 1), lambda x: x)
-
-            link_ids = []
-            if self.query:
-                link_ids = self.get_json(self.query, self.args)
 
             for item in range(int(self.count)):
 
