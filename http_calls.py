@@ -444,10 +444,10 @@ class LastResultAsTable(HttpResultAsTable):
         global lastRequestResult
 
         o = json.loads(lastRequestResult)
-
-        if(type(o) == dict and "hits" in o):
+        self.result = o
+        if type(o) == dict and "hits" in o:
             self.result = o['hits']['hits']
-        elif(type(o) == dict and "docs" in o):
+        elif type(o) == dict and "docs" in o:
             self.result = o['docs']
         print('OUTPUT: ', self.result)
 
