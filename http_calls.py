@@ -154,8 +154,10 @@ class RestTools(HttpCall):
         return data.group(1)
 
     def get_json(self, url, args=None):
+        res = []
+
         try:
-            res = []
+
             resp = self.get_str(url, args)
             if resp:
 
@@ -552,9 +554,9 @@ class BodyFromTable(RestTools):
                 else:
                     setattr(self, "set%s" % str.replace(h, h[0], h[0].upper(), 1), lambda x: x)
 
-            link_ids = []
-            if self.query:
-                link_ids = self.get_json(self.query, self.args)
+            #link_ids = []
+            #if self.query:
+            #    link_ids = self.get_json(self.query, self.args)
 
             for item in range(int(self.count)):
 
