@@ -9,6 +9,7 @@ let router = srv.router(db);
 let middlewares = srv.defaults();
 
 let cnt = 0
+let users_req_cnt = 0
 
 server.use(middlewares);
 
@@ -64,8 +65,8 @@ server.get("/unstable", (req,res) => {
 })
 
 server.get("/fragile/users", (req,res) => {
-    if (cnt > 3) {
-        res.status(500).jsonp({error: "Failed to proceed request"})
+    if (users_req_cnt > 3) {
+        //res.status(500).jsonp({error: "Failed to proceed request"})
 
         res.json(
             [
@@ -75,10 +76,10 @@ server.get("/fragile/users", (req,res) => {
                 }
             ]
         );
-        cnt = 0
+        users_req_cnt = 0
     }
     else {
-        cnt += 1
+        users_req_cnt += 1
 
         res.status(500).jsonp({error: "Failed to proceed request"})
         //res.setHeader('content-length','1000')
