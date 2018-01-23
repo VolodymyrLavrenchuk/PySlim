@@ -43,7 +43,7 @@ server.get("/none", (req,res) => {
 })
 
 server.get("/unstable", (req,res) => {
-    if (cnt >-1) {
+    if (cnt > 3) {
         res.json(
             [
                 {
@@ -59,6 +59,27 @@ server.get("/unstable", (req,res) => {
 
         res.setHeader('content-length','1000')
         res.end(res.writeHead(500, 'bad incomplete response'))
+    }
+
+})
+
+server.get("/fragile/users", (req,res) => {
+    if (cnt > 3) {
+        res.json(
+            [
+                {
+                    firstName: "Tony",
+                    secondName: null
+                }
+            ]
+        );
+        cnt = 0
+    }
+    else {
+        cnt += 1
+
+        //res.setHeader('content-length','1000')
+        //#res.end(res.writeHead(500, 'bad incomplete response'))
     }
 
 })

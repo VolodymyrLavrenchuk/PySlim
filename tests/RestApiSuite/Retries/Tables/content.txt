@@ -1,6 +1,6 @@
-!|Query:http result as table|${URL}/unstable|
-|firstName                  |secondName     |
-|Tony                       |None           |
+!|Query:http result as table|${URL}/fragile/users|
+|firstName                  |secondName          |
+|Tony                       |None                |
 
 
 !|query:last response as table|
