@@ -1,7 +1,6 @@
-!|Query:http result as table|${URL}/unstable     |
-|FirstName                  |LastName|IsMafia|Age|
-|Tony                       |Soprano |True   |   |
-|Jennifer                   |Melfi   |False  |   |
+!|Query:http result as table|${URL}/unstable|
+|firstName                  |secondName     |
+|Tony                       |None           |
 
 
 !|query:last response as table|

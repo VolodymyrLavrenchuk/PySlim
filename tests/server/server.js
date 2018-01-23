@@ -43,11 +43,15 @@ server.get("/none", (req,res) => {
 })
 
 server.get("/unstable", (req,res) => {
-    if (cnt > 3) {
-        res.json({
-            firstName: "Tony",
-            secondName: null
-        });
+    if (cnt >-1) {
+        res.json(
+            [
+                {
+                    firstName: "Tony",
+                    secondName: null
+                }
+            ]
+        );
         cnt = 0
     }
     else {
