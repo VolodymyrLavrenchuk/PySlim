@@ -32,6 +32,7 @@ def make_request(req):
             print("No result")
             return True
         status = result.getcode()
+        print("Got status %s" % status)
         if status >= 500:
             print("Need retry Response statusCode: %s" % status)
             print_response(result)
@@ -39,7 +40,8 @@ def make_request(req):
         return False
 
     @retry(stop_max_attempt_number=10,
-           wait_exponential_multiplier=1.5,
+           wait_fixed=100,
+           #wait_exponential_multiplier=1.5,
            retry_on_result=retry_if_result_bad_http)
     def do_with_retry(req):
         return urllib.request.urlopen(req)

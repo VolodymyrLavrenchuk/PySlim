@@ -65,6 +65,8 @@ server.get("/unstable", (req,res) => {
 
 server.get("/fragile/users", (req,res) => {
     if (cnt > 3) {
+        res.status(500).jsonp({error: "Failed to proceed request"})
+
         res.json(
             [
                 {
@@ -78,6 +80,7 @@ server.get("/fragile/users", (req,res) => {
     else {
         cnt += 1
 
+        res.status(500).jsonp({error: "Failed to proceed request"})
         //res.setHeader('content-length','1000')
         //#res.end(res.writeHead(500, 'bad incomplete response'))
     }
