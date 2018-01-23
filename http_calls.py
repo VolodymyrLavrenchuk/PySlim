@@ -27,6 +27,8 @@ from retrying import RetryError, retry
 
 
 def make_request(req):
+    print("Making request")
+
     def retry_if_result_bad_http(result):
         if not result:
             print("No result")
@@ -39,9 +41,17 @@ def make_request(req):
             return True
         return False
 
+    def retry_on_exception(exc):
+        print("Exc %s " % exc)
+        if isinstance(exc, urllib.error.HTTPError):
+            return exc.status >= 500
+
+        return False
+
     @retry(stop_max_attempt_number=10,
            wait_fixed=100,
-           #wait_exponential_multiplier=1.5,
+           retry_on_exception=retry_on_exception,
+           # wait_exponential_multiplier=1.5,
            retry_on_result=retry_if_result_bad_http)
     def do_with_retry(req):
         return urllib.request.urlopen(req)
@@ -51,6 +61,7 @@ def make_request(req):
     except RetryError as e:
         # print("")
         return e.last_attempt.value
+
 
 def print_response(res):
     print("Response statusCode: %s" % res.getcode())
@@ -87,7 +98,6 @@ class HttpCall:
             raise Exception("Response error %s" % e)
 
         return res
-
 
     def request(self, url, args=None, headers={}):
         return urllib.request.Request(url, args, headers)
