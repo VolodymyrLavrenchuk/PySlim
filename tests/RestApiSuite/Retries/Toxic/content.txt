@@ -1,0 +1,14 @@
+#|import            |
+#|Scripts.http_calls|
+
+!define TOXIC_PORT (8474)
+
+!|Subset Query:http result as table|http://localhost:${TOXIC_PORT}/proxies|
+|full_name                         |owner.login                           |
+|SZalyade-Quest/PowerSlim          |SZalyade-Quest                        |
+
+
+
+!|query:last response as table|
+|status_code       |body      |
+|200               |          |
