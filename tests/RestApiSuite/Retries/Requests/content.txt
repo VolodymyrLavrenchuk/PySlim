@@ -6,9 +6,9 @@
 
 !|query:last response as table|
 |status_code       |body      |
-|201               |          |
+|200               |          |
 
-!|Query:http result as table|${URL}/users        |
+!|Query:http result as table|${URL}/fragile/users|
 |FirstName                  |LastName|IsMafia|Age|
 |Tony                       |Soprano |True   |   |
 |Jennifer                   |Melfi   |False  |   |

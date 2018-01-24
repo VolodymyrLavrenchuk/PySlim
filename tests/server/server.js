@@ -64,28 +64,7 @@ server.get("/unstable", (req,res) => {
 
 })
 
-server.get("/fragile/users", (req,res) => {
-    if (users_req_cnt > 3) {
-        res.json(
-            [
-                {
-                    firstName: "Tony",
-                    secondName: null
-                }
-            ]
-        );
-        users_req_cnt = 0
-    }
-    else {
-        users_req_cnt += 1
-
-        res.status(500).jsonp({error: "Failed to proceed request"})
-    }
-
-})
-
-server.all("/packed/users", (req, res)=>{
-
+function putUsers(req, res) {
     let users = router.db
         .get('users')
         .value();
@@ -104,7 +83,23 @@ server.all("/packed/users", (req, res)=>{
 
     res.json(packed);
 
+}
+server.all("/packed/users", (req, res)=>{
+    putUsers(req, res);
 });
+
+server.all("/fragile/users", (req,res) => {
+    if (users_req_cnt > 3) {
+        putUsers(req, res)
+        users_req_cnt = 0
+    }
+    else {
+        users_req_cnt += 1
+
+        res.status(500).jsonp({error: "Failed to proceed request"})
+    }
+
+})
 
 server.post("/delete/users", (req, res)=>{
 
