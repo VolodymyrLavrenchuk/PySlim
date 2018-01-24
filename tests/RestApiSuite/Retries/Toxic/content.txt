@@ -3,9 +3,16 @@
 
 !define TOXIC_PORT (8474)
 
-!|Subset Query:http result as table|http://localhost:${TOXIC_PORT}/proxies|
-|full_name                         |owner.login                           |
-|SZalyade-Quest/PowerSlim          |SZalyade-Quest                        |
+!|Subset Query:http result as table|http://toxic_proxy:${TOXIC_PORT}/proxies|
+|jsonserver                                                                 |
+
+
+!|script               |
+|Array Field|jsonserver|
+
+!|Subset Query:http result as table|http://toxic_proxy:${TOXIC_PORT}/proxies|
+|name                              |list       |toxics       |upstream      |
+|jsonserver                        |           |             |              |
 
 
 
