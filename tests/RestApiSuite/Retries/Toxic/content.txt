@@ -1,21 +1,41 @@
 #|import            |
 #|Scripts.http_calls|
 
-!define TOXIC_PORT (8474)
+!define TOXIC_PORT_CONTROL (8474)
+!define TOXIC_PORT (4000)
 
-!|Subset Query:http result as table|http://toxic_proxy:${TOXIC_PORT}/proxies|
-|jsonserver                                                                 |
+
+
+!define TOXIC_PROXY_CONTROL (!-http://toxic_proxy-!:${TOXIC_PORT_CONTROL})
+
+!define TOXIC_PROXY (!-http://toxic_proxy-!:${TOXIC_PORT})
+
+!|Subset Query:http result as table|${TOXIC_PROXY_CONTROL}/proxies|
+|jsonserver                                                       |
 
 
 !|script               |
 |Array Field|jsonserver|
 
-!|Subset Query:http result as table|http://toxic_proxy:${TOXIC_PORT}/proxies|
-|name                              |list       |toxics       |upstream      |
-|jsonserver                        |           |             |              |
+!|Subset Query:http result as table|${TOXIC_PROXY_CONTROL}/proxies|
+|name                              |list    |toxics   |upstream   |
+|jsonserver                        |        |         |           |
 
 
 
 !|query:last response as table|
 |status_code       |body      |
 |200               |          |
+
+
+
+!|post    |${TOXIC_PROXY}/users        |
+|FirstName|LastName|IsMafia|Age        |
+|Tony     |Soprano |True   |22         |
+|Jennifer |Melfi   |False  |{"Real":33}|
+
+
+!|Query:http result as table|${TOXIC_PROXY}/users|
+|FirstName                  |LastName|IsMafia|Age|
+|Tony                       |Soprano |True   |   |
+|Jennifer                   |Melfi   |False  |   |
