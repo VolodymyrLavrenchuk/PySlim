@@ -17,9 +17,9 @@
 !|script               |
 |Array Field|jsonserver|
 
-!|Subset Query:http result as table|${TOXIC_PROXY_CONTROL}/proxies|
-|name                              |list    |toxics   |upstream   |
-|jsonserver                        |        |         |           |
+!|Subset Query:http result as table|${TOXIC_PROXY_CONTROL}/proxies |
+|name                              |list|toxics|upstream           |
+|jsonserver                        |    |      |py_slim_server:3000|
 
 
 
