@@ -1,0 +1,33 @@
+#|import            |
+#|Scripts.http_calls|
+
+!define TOXIC_PORT_CONTROL (8474)
+!define TOXIC_PORT (4000)
+
+
+
+#!define TOXIC_PROXY_CONTROL (!-http://toxic_proxy-!:${TOXIC_PORT_CONTROL})
+
+!define TOXIC_PROXY (!-http://toxy-!:${TOXIC_PORT})
+
+
+!|post    |${TOXIC_PROXY}/users        |
+|FirstName|LastName|IsMafia|Age        |
+|Tony     |Soprano |True   |22         |
+|Jennifer |Melfi   |False  |{"Real":33}|
+
+!|query:last response as table|
+|status_code       |body      |
+|201               |          |
+
+
+
+!|Query:http result as table|${TOXIC_PROXY}/users|
+|FirstName                  |LastName|IsMafia|Age|
+|Tony                       |Soprano |True   |   |
+|Jennifer                   |Melfi   |False  |   |
+
+
+!|query:last response as table|
+|status_code       |body      |
+|200               |          |

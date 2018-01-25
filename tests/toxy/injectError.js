@@ -5,7 +5,7 @@ const rules = proxy.rules
 const poisons = proxy.poisons
 
 proxy
-  .forward('http://httpbin.org')
+  .forward('http://py_slim_server:3000')
   .poison(poisons.inject({
     code: 503,
     body: '{"error": "toxy injected error"}',
@@ -16,5 +16,5 @@ proxy
 
 proxy.all('/*')
 
-proxy.listen(3000)
-console.log('Server listening on port:', 3000)
+proxy.listen(4000)
+console.log('Server listening on port:', 4000)
