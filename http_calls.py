@@ -14,6 +14,7 @@ from .date_utils import DateUtils
 
 global lastRequestError
 global lastResponse
+
 global max_attempt_number
 max_attempt_number = 5
 
@@ -29,19 +30,7 @@ from .retrying import RetryError, retry
 
 
 def make_request(req):
-    print("Making request")
-
-    def retry_if_result_bad_http(result):
-        if not result:
-            print("No result")
-            return True
-        status = result.getcode()
-        print("Got status %s" % status)
-        if status >= 500:
-            print("Need retry Response statusCode: %s" % status)
-            print_response(result)
-            return True
-        return False
+    print("Making request with attempt number %s" % max_attempt_number)
 
     def retry_on_exception(exc):
         print("Exception: %s" % exc)
@@ -53,14 +42,11 @@ def make_request(req):
 
         return False
 
-    print("Attempt number %s" % max_attempt_number)
-
     @retry(stop_max_attempt_number=max_attempt_number,
            wait_exponential_max=10000,
            wait_exponential_multiplier=700,
            wait_jitter_max=3000,
-           retry_on_exception=retry_on_exception,
-           retry_on_result=retry_if_result_bad_http)
+           retry_on_exception=retry_on_exception)
     def do_with_retry(req):
         return urllib.request.urlopen(req)
 
