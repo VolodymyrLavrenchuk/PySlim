@@ -47,7 +47,9 @@ def make_request(req):
         print("Exception: %s" % exc)
         if isinstance(exc, urllib.error.HTTPError):
             print("reason: %s" % exc.reason)
-            return exc.status >= 500
+            will_retry = exc.status >= 500
+            print("Will retry: %s" % will_retry)
+            return will_retry
 
         return False
 
