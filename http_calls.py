@@ -30,7 +30,7 @@ from .retrying import RetryError, retry
 
 
 def make_request(req):
-    print("Making request with attempt number %s" % max_attempt_number)
+    print("Making request with attempts %s" % max_attempt_number)
 
     def retry_on_exception(exc):
         print("Exception: %s" % exc)
