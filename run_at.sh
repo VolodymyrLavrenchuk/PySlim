@@ -8,6 +8,10 @@ pushd tests/server
     ./run.sh
 popd
 
+pushd tests/toxy
+    ./run.sh
+popd
+
 docker rm -f $NAME
 docker run -d \
     --network py_slim_server \

@@ -1,0 +1,12 @@
+!|script           |HttpCall|
+|Set retries number|0       |
+
+!|post    |${TOXIC_PROXY}/create/user|
+|FirstName|LastName                  |
+|Tony     |Soprano                   |
+
+!|query:last response as table|
+|status_code       |body      |
+|502               |          |
+
+
