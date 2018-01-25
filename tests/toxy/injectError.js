@@ -11,8 +11,8 @@ proxy
     body: '{"error": "toxy injected error"}',
     headers: {'Content-Type': 'application/json'}
   }))
-  .withRule(rules.method('GET'))
-  .withRule(rules.probability(90))
+  //.withRule(rules.method('GET'))
+  .withRule(rules.probability(99))
 
 proxy.all('/*')
 
