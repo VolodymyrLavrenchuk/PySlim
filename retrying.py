@@ -13,7 +13,6 @@
 ## limitations under the License.
 
 import random
-import sys
 import time
 import traceback
 import functools
@@ -186,7 +185,7 @@ class Retrying(object):
     def should_reject(self, attempt):
         reject = False
         if attempt.has_exception:
-            reject |= self._retry_on_exception(attempt.value) #.value[1]
+            reject |= self._retry_on_exception(attempt.value)
         else:
             reject |= self._retry_on_result(attempt.value)
 
@@ -244,11 +243,6 @@ class Attempt(object):
             if wrap_exception:
                 raise RetryError(self)
             else:
-                import six
-                import json
-                print("Value: %s", self.value)
-
-                #six.reraise(self.value[0], self.value[1], self.value[2])
                 raise self.value
         else:
             return self.value
