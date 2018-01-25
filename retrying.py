@@ -13,10 +13,10 @@
 ## limitations under the License.
 
 import random
-import six
 import sys
 import time
 import traceback
+import functools
 
 
 # sys.maxint / 2, since Python 3.2 doesn't have a sys.maxint...
@@ -33,7 +33,7 @@ def retry(*dargs, **dkw):
     if len(dargs) == 1 and callable(dargs[0]):
         def wrap_simple(f):
 
-            @six.wraps(f)
+            @functools.wraps(f)
             def wrapped_f(*args, **kw):
                 return Retrying().call(f, *args, **kw)
 
@@ -44,7 +44,7 @@ def retry(*dargs, **dkw):
     else:
         def wrap(f):
 
-            @six.wraps(f)
+            @functools.wraps(f)
             def wrapped_f(*args, **kw):
                 return Retrying(*dargs, **dkw).call(f, *args, **kw)
 
@@ -186,7 +186,7 @@ class Retrying(object):
     def should_reject(self, attempt):
         reject = False
         if attempt.has_exception:
-            reject |= self._retry_on_exception(attempt.value[1])
+            reject |= self._retry_on_exception(attempt.value) #.value[1]
         else:
             reject |= self._retry_on_result(attempt.value)
 
@@ -198,9 +198,9 @@ class Retrying(object):
         while True:
             try:
                 attempt = Attempt(fn(*args, **kwargs), attempt_number, False)
-            except:
-                tb = sys.exc_info()
-                attempt = Attempt(tb, attempt_number, True)
+            except Exception as exc:
+                #tb = sys.exc_info()
+                attempt = Attempt(exc, attempt_number, True)
 
             if not self.should_reject(attempt):
                 return attempt.get(self._wrap_exception)
@@ -244,13 +244,20 @@ class Attempt(object):
             if wrap_exception:
                 raise RetryError(self)
             else:
-                six.reraise(self.value[0], self.value[1], self.value[2])
+                import six
+                import json
+                print("Value: %s", self.value)
+
+                #six.reraise(self.value[0], self.value[1], self.value[2])
+                raise self.value
         else:
             return self.value
 
     def __repr__(self):
         if self.has_exception:
-            return "Attempts: {0}, Error:\n{1}".format(self.attempt_number, "".join(traceback.format_tb(self.value[2])))
+            # _self.value[2]
+            return "Attempts: {0}, Error:\n{1}".format(self.attempt_number,
+                                                       "".join(traceback.format_tb(self.value.__traceback__)))
         else:
             return "Attempts: {0}, Value: {1}".format(self.attempt_number, self.value)
 
