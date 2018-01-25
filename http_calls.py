@@ -60,7 +60,6 @@ def make_request(req):
     try:
         return do_with_retry(req)
     except RetryError as e:
-        # print("")
         return e.last_attempt.value
 
 

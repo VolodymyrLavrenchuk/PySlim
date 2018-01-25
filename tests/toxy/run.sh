@@ -12,9 +12,9 @@ docker run -d \
     --name=$NAME $NAME
 
 
-sleep 2
+#sleep 2
 
-docker logs toxy
+#docker logs toxy
 #echo "Configuring proxy"
 
 
