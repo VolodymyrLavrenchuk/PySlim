@@ -14,6 +14,8 @@ from .date_utils import DateUtils
 
 global lastRequestError
 global lastResponse
+global max_attempt_number
+max_attempt_number = 10
 
 lastRequestResult = None
 lastRequestError = None
@@ -49,7 +51,10 @@ def make_request(req):
 
         return False
 
-    @retry(stop_max_attempt_number=10,
+    #global max_attempt_number
+    print("Attempt number %s" % max_attempt_number)
+
+    @retry(stop_max_attempt_number=max_attempt_number,
            wait_fixed=100,
            retry_on_exception=retry_on_exception,
            # wait_exponential_multiplier=1.5,
@@ -69,6 +74,10 @@ def print_response(res):
 
 
 class HttpCall:
+    def set_retries_number(self, number):
+        global max_attempt_number
+        max_attempt_number = int(number)
+
     def open(self, req):
 
         try:

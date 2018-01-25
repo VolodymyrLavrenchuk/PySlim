@@ -1,3 +1,7 @@
+!|script           |HttpCall|
+|Set retries number|100     |
+
+
 !|post    |${TOXIC_PROXY}/users        |
 |FirstName|LastName|IsMafia|Age        |
 |Tony     |Soprano |True   |22         |
