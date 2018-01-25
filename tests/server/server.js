@@ -9,7 +9,6 @@ let router = srv.router(db);
 let middlewares = srv.defaults();
 
 let cnt = 0
-let users_req_cnt = 0
 
 server.use(middlewares);
 
@@ -45,14 +44,10 @@ server.get("/none", (req,res) => {
 
 server.get("/unstable", (req,res) => {
     if (cnt > 3) {
-        res.json(
-            [
-                {
-                    firstName: "Tony",
-                    secondName: null
-                }
-            ]
-        );
+        res.json({
+            firstName: "Tony",
+            secondName: null
+        });
         cnt = 0
     }
     else {
@@ -64,7 +59,8 @@ server.get("/unstable", (req,res) => {
 
 })
 
-function putUsers(req, res) {
+server.all("/packed/users", (req, res)=>{
+
     let users = router.db
         .get('users')
         .value();
@@ -83,23 +79,7 @@ function putUsers(req, res) {
 
     res.json(packed);
 
-}
-server.all("/packed/users", (req, res)=>{
-    putUsers(req, res);
 });
-
-server.all("/fragile/users", (req,res) => {
-    if (users_req_cnt > 3) {
-        putUsers(req, res)
-        users_req_cnt = 0
-    }
-    else {
-        users_req_cnt += 1
-
-        res.status(500).jsonp({error: "Failed to proceed request"})
-    }
-
-})
 
 server.post("/delete/users", (req, res)=>{
 
