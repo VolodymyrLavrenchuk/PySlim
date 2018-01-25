@@ -10,14 +10,17 @@
 
 !define TOXIC_PROXY (!-http://toxic_proxy-!:${TOXIC_PORT})
 
+Configure proxy
+
 !|post     |${TOXIC_PROXY_CONTROL}/proxies      |
 |name      |listen          |upstream           |
 |jsonserver|toxic_proxy:4000|py_slim_server:3000|
 
 
-!|query:last response as table  |
-|status_code               |body|
-|=~!-/((201)|(409))-!/|    |
+
+!|query:last response as table|
+|status_code            |body |
+|=~!-/((201)|(409))-!/  |     |
 
 !|Subset Query:http result as table|${TOXIC_PROXY_CONTROL}/proxies|
 |jsonserver                                                       |
@@ -31,11 +34,23 @@
 |jsonserver                        |    |      |py_slim_server:3000|
 
 
+!|Subset Query:http result as table|${TOXIC_PROXY_CONTROL}/proxies/jsonserver|
+|name                              |list    |toxics   |upstream              |
+|jsonserver                        |        |         |py_slim_server:3000   |
 
 !|query:last response as table|
 |status_code       |body      |
 |200               |          |
 
+Configure side effects
+
+!|post  |${TOXIC_PROXY_CONTROL}/proxies/jsonserver/toxics|
+|name   |type                                            |
+|fragile|limit_data                                      |
+
+!|query:last response as table|
+|status_code            |body |
+|=~!-/((201)|(409))-!/  |     |
 
 
 !|post    |${TOXIC_PROXY}/users        |
