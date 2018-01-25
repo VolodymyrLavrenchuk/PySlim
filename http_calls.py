@@ -23,7 +23,7 @@ lastResponseTime = None
 g_headers = dict()
 g_array_field = "hits"
 
-from retrying import RetryError, retry
+from .retrying import RetryError, retry
 
 
 def make_request(req):
