@@ -10,6 +10,15 @@
 
 !define TOXIC_PROXY (!-http://toxic_proxy-!:${TOXIC_PORT})
 
+!|post     |${TOXIC_PROXY_CONTROL}/proxies      |
+|name      |listen          |upstream           |
+|jsonserver|toxic_proxy:4000|py_slim_server:3000|
+
+
+!|query:last response as table  |
+|status_code               |body|
+|=~!-/((201)|(409))-!/|    |
+
 !|Subset Query:http result as table|${TOXIC_PROXY_CONTROL}/proxies|
 |jsonserver                                                       |
 

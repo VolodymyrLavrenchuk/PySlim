@@ -15,5 +15,5 @@ docker run -d \
 echo "Configuring proxy"
 
 
-docker exec  -t $NAME ./go/bin/toxiproxy-cli create jsonserver -l $NAME:4000 -u py_slim_server:3000
+#docker exec  -t $NAME ./go/bin/toxiproxy-cli create jsonserver -l $NAME:4000 -u py_slim_server:3000
 
