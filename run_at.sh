@@ -8,7 +8,7 @@ pushd tests/server
     ./run.sh
 popd
 
-pushd tests/toxic_proxy
+pushd tests/toxy
     ./run.sh
 popd
 

@@ -1,12 +1,4 @@
-#|import            |
-#|Scripts.http_calls|
-
-!define TOXIC_PORT_CONTROL (8474)
 !define TOXIC_PORT (4000)
-
-
-
-#!define TOXIC_PROXY_CONTROL (!-http://toxic_proxy-!:${TOXIC_PORT_CONTROL})
 
 !define TOXIC_PROXY (!-http://toxy-!:${TOXIC_PORT})
 
@@ -19,7 +11,6 @@
 !|query:last response as table|
 |status_code       |body      |
 |201               |          |
-
 
 
 !|Query:http result as table|${TOXIC_PROXY}/users|
