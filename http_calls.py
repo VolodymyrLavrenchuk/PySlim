@@ -51,7 +51,6 @@ def make_request(req):
 
         return False
 
-    #global max_attempt_number
     print("Attempt number %s" % max_attempt_number)
 
     @retry(stop_max_attempt_number=max_attempt_number,
