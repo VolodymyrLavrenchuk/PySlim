@@ -13,14 +13,14 @@ proxy
     headers: {'Content-Type': 'application/json'}
   }))
   //.withRule(rules.method('GET'))  all requests are poisoned
-  .withRule(rules.probability(70))
+  .withRule(rules.probability(50))
 
 //proxy.all('/*')
 
 proxy
   .all('/create/user')
   .poison(poisons.inject({
-    code: 503,
+    code: 502,
     body: '{"error": "toxy injected error"}',
     headers: {'Content-Type': 'application/json'}
   }))

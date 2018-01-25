@@ -1,27 +1,12 @@
 !|script           |HttpCall|
 |Set retries number|0       |
 
-
-#!|post    |${TOXIC_PROXY}/users        |
-#|FirstName|LastName|IsMafia|Age        |
-#|Tony     |Soprano |True   |22         |
-#|Jennifer |Melfi   |False  |{"Real":33}|
-
-
 !|post    |${TOXIC_PROXY}/create/user|
 |FirstName|LastName                  |
 |Tony     |Soprano                   |
 
 !|query:last response as table|
 |status_code       |body      |
-|503               |          |
-
-#!|Query:http result as table|${TOXIC_PROXY}/users|
-#|FirstName                  |LastName|IsMafia|Age|
-#|Tony                       |Soprano |True   |   |
-#|Jennifer                   |Melfi   |False  |   |
+|502               |          |
 
 
-#!|query:last response as table|
-#|status_code       |body      |
-#|503               |          |
