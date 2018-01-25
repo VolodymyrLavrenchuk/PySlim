@@ -55,8 +55,6 @@ def make_request(req):
 
     print("Attempt number %s" % max_attempt_number)
 
-    # wait_fixed=100,
-
     @retry(stop_max_attempt_number=max_attempt_number,
            wait_exponential_max=10000,
            wait_exponential_multiplier=700,
