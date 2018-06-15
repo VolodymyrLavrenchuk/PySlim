@@ -208,6 +208,10 @@ class RestTools(HttpCall):
         res = self.unpack(res)
         return self.get_attr_by_type(res, attr)
 
+    def getAttributeLengthFromLastResponse(self, attr):
+
+        return len(self.getAttributeFromLastResponse(attr))
+
     def getAttributeFromResponse(self, attr, url, args=None):
         return self.get_attr_by_type(self.get_json(url, args), attr)
 
