@@ -136,7 +136,9 @@ class RestTools(HttpCall):
     
     def getRequest(self, url, data=None, headers={}):
         headers.update(g_headers)
-        return self.request(self.get_full_url(url), data.encode('utf-8'), headers)
+        if data != None:
+            data = data.encode('utf-8')
+        return self.request(self.get_full_url(url), data, headers)
 
     def get_str(self, url, args=None):
         return self.GET(self.get_full_url(url), {'Accept': 'application/json'}, args).decode('utf-8')
@@ -658,3 +660,33 @@ class BulkPatch(Bulk):
         Bulk.__init__(self, url, 'PATCH')
 
 
+class ScanResultAsTable(HttpResultAsTable):
+
+    def getNextScrollToken(self):
+        body = json.loads(lastRequestResult)
+
+        hitsCount = len(body["hits"]["hits"])
+
+        if hitsCount > 0:
+
+          global lastResponseTime
+          self.totalTime += lastResponseTime
+          self.totalItems += hitsCount
+          return body["_scroll_id"]
+        else:
+          return ""
+
+    def __init__(self, entity, query, jwt_service, args=None):
+
+        body = self.PUT("/api/" + entity + "/scroll?" + query, args)
+        self.totalTime = 0
+        self.totalItems = 0
+
+        while True:
+          nextToken = self.getNextScrollToken()
+          if nextToken == "":
+            break
+          self.Header("Authorization", self.get_str(jwt_service))
+          body = self.PUT("/api/scroll/" + nextToken)
+
+        self.result = {'time': self.totalTime, 'items' : self.totalItems}
