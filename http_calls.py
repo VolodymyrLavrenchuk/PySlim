@@ -658,35 +658,3 @@ class BulkPost(Bulk):
 class BulkPatch(Bulk):
     def __init__(self, url):
         Bulk.__init__(self, url, 'PATCH')
-
-
-class ScanResultAsTable(HttpResultAsTable):
-
-    def getNextScrollToken(self):
-        body = json.loads(lastRequestResult)
-
-        hitsCount = len(body["hits"]["hits"])
-
-        if hitsCount > 0:
-
-          global lastResponseTime
-          self.totalTime += lastResponseTime
-          self.totalItems += hitsCount
-          return body["_scroll_id"]
-        else:
-          return ""
-
-    def __init__(self, entity, query, jwt_service, args=None):
-
-        body = self.PUT("/api/" + entity + "/scroll?" + query, args)
-        self.totalTime = 0
-        self.totalItems = 0
-
-        while True:
-          nextToken = self.getNextScrollToken()
-          if nextToken == "":
-            break
-          self.Header("Authorization", self.get_str(jwt_service))
-          body = self.PUT("/api/scroll/" + nextToken)
-
-        self.result = {'time': self.totalTime, 'items' : self.totalItems}
