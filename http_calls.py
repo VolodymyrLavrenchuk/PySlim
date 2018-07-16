@@ -1,6 +1,7 @@
 from waferslim.converters import convert_arg, convert_result, StrConverter
 
 import json
+import logging
 import ast
 import re
 import time
@@ -100,7 +101,7 @@ class HttpCall:
         return urllib.request.Request(url, args, headers)
 
     def read(self, req):
-
+        print("Read request")
         start = time.time()
         resp = self.open(req)
 
@@ -180,7 +181,9 @@ class RestTools(HttpCall):
         return self.request(self.get_full_url(url), data.encode('utf-8'), headers)
 
     def get_str(self, url, args=None):
-        return self.GET(self.get_full_url(url), {'Accept': 'application/json'}, args).decode('utf-8')
+        full_url = self.get_full_url(url)
+        print("Full-url %s" % full_url )
+        return self.GET(full_url, {'Accept': 'application/json'}, args).decode('utf-8')
 
     def get_hex_str(self, url, args=None):
         resp = self.GET(self.get_full_url(url), {'Accept': 'application/json'}, args)
@@ -198,7 +201,7 @@ class RestTools(HttpCall):
         res = []
 
         try:
-
+            print("Get str")
             resp = self.get_str(url, args)
             if resp:
 
@@ -275,11 +278,43 @@ class RestTools(HttpCall):
     def quoteUrl(self, url):
         return urllib.parse.quote(url)
 
+    def waitSecondTimesUrlResponseCondition(self, wait_sec, retries, url, condition):
+        def func(args):
+            print("Called function %s %s" % (url, args))
+            #print("Wait for attr  %s" % attr)
+            #resp = self.getAttributeFromResponse(args["attr"], args["url"])
+            resp = self.get_json(url) # $, args
+
+
+            print("Got condition resp %s" % resp)
+            print("Got condition resp %s" % type(resp))
+            if (resp is None):
+                return False
+            try:
+                result = eval(condition, globals(), locals())
+            except:
+                logging.exception("Failed condtiion")
+                return  False
+            print("Got condition result %s", result)
+            return result
+
+            #resp_type = type(resp)
+
+            #try:
+            #    return resp == resp_type(value)
+            #except ValueError:
+            #    return False
+
+        result = self.wait(wait_sec, retries, func, url=url)
+        return result
+
     def waitSecondTimesUrlResponseAttributeHasValue(self, wait_sec, retries, url, attr, value):
         def func(args):
 
+            print("Wait for attr %s" % attr)
             resp = self.getAttributeFromResponse(args["attr"], args["url"])
 
+            print("Got resp %s" % resp)
             if (resp is None):
                 return False
 
