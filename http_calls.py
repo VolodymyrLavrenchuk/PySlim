@@ -201,7 +201,6 @@ class RestTools(HttpCall):
         res = []
 
         try:
-            print("Get str")
             resp = self.get_str(url, args)
             if resp:
 
@@ -280,12 +279,10 @@ class RestTools(HttpCall):
 
     def waitSecondTimesUrlResponseCondition(self, wait_sec, retries, url, condition):
         def func(args):
-            print("Called function %s %s" % (url, args))
-            resp = self.get_json(url)  # $, args
+            resp = self.get_json(url)
 
             print("Got condition resp %s" % resp)
-            print("Got condition resp %s" % type(resp))
-            if (resp is None):
+            if resp is None:
                 return False
             try:
                 result = eval(condition, globals(), locals())
@@ -294,13 +291,6 @@ class RestTools(HttpCall):
                 return False
             print("Got condition result %s" % result)
             return result
-
-            # resp_type = type(resp)
-
-            # try:
-            #    return resp == resp_type(value)
-            # except ValueError:
-            #    return False
 
         result = self.wait(wait_sec, retries, func, url=url)
         return result
