@@ -101,7 +101,6 @@ class HttpCall:
         return urllib.request.Request(url, args, headers)
 
     def read(self, req):
-        print("Read request")
         start = time.time()
         resp = self.open(req)
 
@@ -181,9 +180,7 @@ class RestTools(HttpCall):
         return self.request(self.get_full_url(url), data.encode('utf-8'), headers)
 
     def get_str(self, url, args=None):
-        full_url = self.get_full_url(url)
-        print("Full-url %s" % full_url)
-        return self.GET(full_url, {'Accept': 'application/json'}, args).decode('utf-8')
+        return self.GET(self.get_full_url(url), {'Accept': 'application/json'}, args).decode('utf-8')
 
     def get_hex_str(self, url, args=None):
         resp = self.GET(self.get_full_url(url), {'Accept': 'application/json'}, args)

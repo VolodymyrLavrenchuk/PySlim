@@ -11,7 +11,3 @@
 |check|wait|0.2|second|2|times url|${URL}/users/2|response condition|resp['Reports']         |false|
 |check|wait|0.2|second|2|times url|${URL}/users/2|response condition|"John" in resp['Bosses']|true |
 
-
-#|check|wait|0.2|second|2|times url|${URL}/users/1|response attribute|LastName|Not Empty|true|
-#|check|wait|0.2|second|2|times url|${URL}/users/1|response attribute|Bosses  |Not Empty|false|
-
