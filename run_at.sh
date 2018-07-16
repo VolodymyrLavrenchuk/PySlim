@@ -18,6 +18,6 @@ docker run -d \
     -v $(pwd)/tests:/FitNesseRoot \
     -v $(pwd):/FitNesseRoot/Scripts \
     --name=$NAME \
-    -p 8082:8085 \
+    -p 8090:8081 \
     waferslim-coverage
 
