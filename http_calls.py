@@ -182,7 +182,7 @@ class RestTools(HttpCall):
 
     def get_str(self, url, args=None):
         full_url = self.get_full_url(url)
-        print("Full-url %s" % full_url )
+        print("Full-url %s" % full_url)
         return self.GET(full_url, {'Accept': 'application/json'}, args).decode('utf-8')
 
     def get_hex_str(self, url, args=None):
@@ -281,10 +281,7 @@ class RestTools(HttpCall):
     def waitSecondTimesUrlResponseCondition(self, wait_sec, retries, url, condition):
         def func(args):
             print("Called function %s %s" % (url, args))
-            #print("Wait for attr  %s" % attr)
-            #resp = self.getAttributeFromResponse(args["attr"], args["url"])
-            resp = self.get_json(url) # $, args
-
+            resp = self.get_json(url)  # $, args
 
             print("Got condition resp %s" % resp)
             print("Got condition resp %s" % type(resp))
@@ -294,15 +291,15 @@ class RestTools(HttpCall):
                 result = eval(condition, globals(), locals())
             except:
                 logging.exception("Failed condtiion")
-                return  False
-            print("Got condition result %s", result)
+                return False
+            print("Got condition result %s" % result)
             return result
 
-            #resp_type = type(resp)
+            # resp_type = type(resp)
 
-            #try:
+            # try:
             #    return resp == resp_type(value)
-            #except ValueError:
+            # except ValueError:
             #    return False
 
         result = self.wait(wait_sec, retries, func, url=url)
