@@ -295,11 +295,9 @@ class RestTools(HttpCall):
     def waitSecondTimesUrlResponseAttributeHasValue(self, wait_sec, retries, url, attr, value):
         def func(args):
 
-            print("Wait for attr %s" % attr)
             resp = self.getAttributeFromResponse(args["attr"], args["url"])
 
-            print("Got resp %s" % resp)
-            if (resp is None):
+            if resp is None:
                 return False
 
             resp_type = type(resp)
