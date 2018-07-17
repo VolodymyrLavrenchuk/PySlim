@@ -8,6 +8,8 @@ let router = srv.router(db);
 
 let middlewares = srv.defaults();
 
+let cnt = 0
+
 server.use(middlewares);
 
 function sortObject( obj ) {
@@ -38,6 +40,23 @@ server.get("/none", (req,res) => {
         firstName: "Tony",
         secondName: null
     });
+})
+
+server.get("/unstable", (req,res) => {
+    if (cnt > 3) {
+        res.json({
+            firstName: "Tony",
+            secondName: null
+        });
+        cnt = 0
+    }
+    else {
+        cnt += 1
+
+        res.setHeader('content-length','1000')
+        res.end(res.writeHead(500, 'bad incomplete response'))
+    }
+
 })
 
 server.all("/packed/users", (req, res)=>{

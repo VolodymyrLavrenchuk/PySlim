@@ -1,0 +1,5 @@
+!define TOXIC_PORT (4000)
+
+!define TOXIC_PROXY (!-http://toxy-!:${TOXIC_PORT})
+
+!contents -R2 -g -p -f -h

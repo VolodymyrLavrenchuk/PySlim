@@ -4,6 +4,7 @@ import json
 import ast
 import re
 import time
+import traceback
 import urllib
 import urllib.request
 from socket import error as socket_error
@@ -14,6 +15,9 @@ from .date_utils import DateUtils
 global lastRequestError
 global lastResponse
 
+global max_attempt_number
+max_attempt_number = 5
+
 lastRequestResult = None
 lastRequestError = None
 lastResponse = None
@@ -22,7 +26,46 @@ lastResponseTime = None
 g_headers = dict()
 g_array_field = "hits"
 
+from .retrying import RetryError, retry
+
+
+def make_request(req):
+    print("Making request with attempts %s" % max_attempt_number)
+
+    def retry_on_exception(exc):
+        print("Exception: %s" % exc)
+        if isinstance(exc, urllib.error.HTTPError):
+            print("reason: %s" % exc.reason)
+            will_retry = exc.status >= 500
+            print("Will retry: %s" % will_retry)
+            return will_retry
+
+        return False
+
+    @retry(stop_max_attempt_number=max_attempt_number,
+           wait_exponential_max=10000,
+           wait_exponential_multiplier=700,
+           wait_jitter_max=3000,
+           retry_on_exception=retry_on_exception)
+    def do_with_retry(req):
+        return urllib.request.urlopen(req)
+
+    try:
+        return do_with_retry(req)
+    except RetryError as e:
+        return e.last_attempt.value
+
+
+def print_response(res):
+    print("Response statusCode: %s" % res.getcode())
+    print("Response headers: %s" % res.info())
+
+
 class HttpCall:
+    def set_retries_number(self, number):
+        global max_attempt_number
+        max_attempt_number = int(number)
+
     def open(self, req):
 
         try:
@@ -34,18 +77,16 @@ class HttpCall:
             if req.data is not None:
                 print("Request body: %s" % req.data)
             global lastResponse
-            lastResponse = res = urllib.request.urlopen(req)
+            lastResponse = res = make_request(req)  # urllib.request.urlopen(req)
             print("Success.")
-            print("Response statusCode: %s" % res.getcode())
-            print("Response headers: %s" % res.info())
+            print_response(res)
 
         except urllib.error.HTTPError as e:
 
             lastResponse = lastRequestError = res = e
 
             print("HTTPError")
-            print("Response statusCode: %s" % res.getcode())
-            print("Response headers: %s" % res.info())
+            print_response(res)
 
         except BaseException as e:
             lastResponse = lastRequestError = res = e
@@ -75,36 +116,35 @@ class HttpCall:
             print("Response body: %s" % ret)
             global lastRequestResult
             try:
-              lastRequestResult = ret.decode('utf-8')
+                lastRequestResult = ret.decode('utf-8')
             except BaseException as e:
-              print("Can`t decode utf-8. Return as is")
-              lastRequestResult = ret
+                print("Can`t decode utf-8. Return as is")
+                lastRequestResult = ret
 
         return ret
 
-    def GET( self, url, headers = {}, args = None ):
+    def GET(self, url, headers={}, args=None):
 
-        if type( headers ) == str:
-          headers = json.loads( headers ) if len( headers ) > 0 else {}
+        if type(headers) == str:
+            headers = json.loads(headers) if len(headers) > 0 else {}
 
         rqHeaders = {}
-        rqHeaders.update( g_headers )
-        rqHeaders.update( headers )
+        rqHeaders.update(g_headers)
+        rqHeaders.update(headers)
 
-        rqHeaders = { k: v for k, v in rqHeaders.items() if v != "" }
+        rqHeaders = {k: v for k, v in rqHeaders.items() if v != ""}
 
         if args:
-            url = url + urllib.parse.quote( args, '=&' )
+            url = url + urllib.parse.quote(args, '=&')
 
-        req = self.request( url, None, rqHeaders )
+        req = self.request(url, None, rqHeaders)
 
-        return self.read( req )
+        return self.read(req)
 
     def ArrayField(self, value):
 
         global g_array_field
         g_array_field = value
-        
 
     def Header(self, h, v):
 
@@ -122,18 +162,19 @@ class HttpCall:
     def get_full_url(self, url):
 
         global host_url
-        
+
         if url.startswith("http://") or url.startswith("https://"):
             return url
-        else: 
+        else:
             return host_url + url
+
 
 class RestTools(HttpCall):
     http_headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
     def format_raw_get(self, url, args=None):
-        return json.dumps(self.get_json(url),sort_keys=True)
-    
+        return json.dumps(self.get_json(url), sort_keys=True)
+
     def getRequest(self, url, data=None, headers={}):
         headers.update(g_headers)
         if data != None:
@@ -156,8 +197,10 @@ class RestTools(HttpCall):
         return data.group(1)
 
     def get_json(self, url, args=None):
+        res = []
+
         try:
-            res = []
+
             resp = self.get_str(url, args)
             if resp:
 
@@ -171,8 +214,6 @@ class RestTools(HttpCall):
 
         print("get_json result: %s" % res)
         return res
-        
-    
 
     def get_attr_by_type(self, data, attr):
 
@@ -194,7 +235,7 @@ class RestTools(HttpCall):
 
         return res
 
-    def unpack(self,res):
+    def unpack(self, res):
 
         if type(res) == dict:
             if g_array_field in res:
@@ -227,32 +268,36 @@ class RestTools(HttpCall):
     def wait(self, wait_sec, retries, func, **kwargs):
 
         for r in range(int(retries)):
-            if func(kwargs):
-                return True
+            try:
+                if func(kwargs):
+                    return True
+            except Exception as e:
+                print(e)
+                traceback.print_exc()
+
             self.sleep(wait_sec)
         return False
 
     def quoteUrl(self, url):
         return urllib.parse.quote(url)
 
-
     def waitSecondTimesUrlResponseAttributeHasValue(self, wait_sec, retries, url, attr, value):
         def func(args):
 
             resp = self.getAttributeFromResponse(args["attr"], args["url"])
-            
-            if(resp is None):
+
+            if (resp is None):
                 return False
 
             resp_type = type(resp)
-            
+
             try:
                 return resp == resp_type(value)
             except ValueError:
                 return False
 
         result = self.wait(wait_sec, retries, func, attr=attr, url=url)
-        return result 
+        return result
 
     def waitSecondTimesUrlResponseAttributeNotZero(self, wait_sec, retries, url, attr):
         def func(args):
@@ -268,7 +313,6 @@ class RestTools(HttpCall):
 
     def waitSecondTimesUrlResponseAttributeNotEmpty(self, wait_sec, retries, url, attr):
         def func(args):
-
             resp = self.getAttributeFromResponse(args["attr"], args["url"])
 
             if resp:
@@ -341,18 +385,18 @@ class RestTools(HttpCall):
 
         global lastRequestResult
         return json.loads(lastRequestResult)[AttrName]
-        
+
     def findAttributeByName(self, keyName, keyValue, attrName):
-    
+
         global lastRequestResult
         res = json.loads(lastRequestResult)
-        
+
         if type(res) == dict:
             if g_array_field in res:
                 res = res[g_array_field]
-                
+
         val = [r[attrName] for r in res if r[keyName] == keyValue]
-                
+
         return val and val[0] or None
 
     def getRawRequestResult(self):
@@ -414,8 +458,8 @@ class HttpResultAsTable(RestTools, Execute):
                                 elif isinstance(val, dict) and k.isdigit():
                                     k = list(val.keys())[int(k)]
 
-                                print(val)    
-                                print(k)    
+                                print(val)
+                                print(k)
 
                                 val = val[k]
 
@@ -448,10 +492,10 @@ class LastResultAsTable(HttpResultAsTable):
         global lastRequestResult
 
         o = json.loads(lastRequestResult)
-
-        if(type(o) == dict and "hits" in o):
+        self.result = o
+        if type(o) == dict and "hits" in o:
             self.result = o['hits']['hits']
-        elif(type(o) == dict and "docs" in o):
+        elif type(o) == dict and "docs" in o:
             self.result = o['docs']
         print('OUTPUT: ', self.result)
 
@@ -472,6 +516,7 @@ class ResponseAsTable(HttpResultAsTable):
         global lastResponse
         print(lastResponse.info())
         self.result = {'status_code': lastResponse.getcode(), 'headers': lastResponse.info(), 'body': body}
+
 
 class LastResponseAsTable(HttpResultAsTable):
     def __init__(self):
@@ -505,25 +550,25 @@ class BodyFromTable(RestTools):
         self.args = args
 
     def check_bool(self, val):
-        
+
         if isinstance(val, str) and val.lower() == "false":
             return False
-            
+
         if isinstance(val, str) and val.lower() == "true":
             return True
 
         return val
-        
+
     def check_dict(self, val):
 
         val = self.parse_json(val)
-               
+
         if isinstance(val, str):
             if val.startswith("["):
                 return val[1:len(val) - 1].split(",")
             if val.startswith("{"):
                 return ast.literal_eval(val)
-                    
+
         return val
 
     @convert_arg(to_type=dict)
@@ -539,7 +584,7 @@ class BodyFromTable(RestTools):
     def parse_json(self, val):
         try:
             return json.loads(val)
-        except BaseException as e:            
+        except BaseException as e:
             return val
 
     def isUndefined(self, val):
@@ -558,10 +603,6 @@ class BodyFromTable(RestTools):
                 else:
                     setattr(self, "set%s" % str.replace(h, h[0], h[0].upper(), 1), lambda x: x)
 
-            link_ids = []
-            if self.query:
-                link_ids = self.get_json(self.query, self.args)
-
             for item in range(int(self.count)):
 
                 for row in rows[1:]:
@@ -576,13 +617,13 @@ class BodyFromTable(RestTools):
                             pass
                         else:
                             if not self.isUndefined(row[idx]):
-                                val = row[idx]                                                            
+                                val = row[idx]
                                 data[header[idx]] = self.check_hashtable(self.check_dict(self.check_bool(val)))
 
                     self.processRow(data, id)
 
         self.makeRequestWithBody()
-    
+
     def makeUrl(self, data, id):
         if not id:
             return self.url
@@ -592,7 +633,7 @@ class BodyFromTable(RestTools):
 
         func = getattr(self, self.method)
         url = self.makeUrl(data, id)
-        
+
         ct = g_headers.get("Content-Type")
 
         if ct == "application/x-www-form-urlencoded":
@@ -614,7 +655,7 @@ class BodyFromTable(RestTools):
     def makeRequestWithBody(self):
         pass
 
-        
+
 class Post(BodyFromTable):
     def __init__(self, url, count=1, query=None, args=None):
         BodyFromTable.__init__(self, "POST", url, count, query, args)

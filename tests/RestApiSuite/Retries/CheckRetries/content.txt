@@ -1,0 +1,19 @@
+!|post    |${TOXIC_PROXY}/users        |
+|FirstName|LastName|IsMafia|Age        |
+|Tony     |Soprano |True   |22         |
+|Jennifer |Melfi   |False  |{"Real":33}|
+
+!|query:last response as table|
+|status_code       |body      |
+|201               |          |
+
+
+!|Query:http result as table|${TOXIC_PROXY}/users|
+|FirstName                  |LastName|IsMafia|Age|
+|Tony                       |Soprano |True   |   |
+|Jennifer                   |Melfi   |False  |   |
+
+
+!|query:last response as table|
+|status_code       |body      |
+|200               |          |
