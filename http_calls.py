@@ -7,6 +7,8 @@ import time
 import traceback
 import urllib
 import urllib.request
+from hyper import HTTP20Connection
+
 from socket import error as socket_error
 
 from .ExecuteQuery import Execute
@@ -29,7 +31,7 @@ g_array_field = "hits"
 from .retrying import RetryError, retry
 
 
-def make_request(req):
+def make_request(func):
     print("Making request with attempts %s" % max_attempt_number)
 
     def retry_on_exception(exc):
@@ -47,18 +49,13 @@ def make_request(req):
            wait_exponential_multiplier=700,
            wait_jitter_max=3000,
            retry_on_exception=retry_on_exception)
-    def do_with_retry(req):
-        return urllib.request.urlopen(req)
+    def do_with_retry():
+        return func()
 
     try:
-        return do_with_retry(req)
+        return do_with_retry()
     except RetryError as e:
         return e.last_attempt.value
-
-
-def print_response(res):
-    print("Response statusCode: %s" % res.getcode())
-    print("Response headers: %s" % res.info())
 
 
 class HttpCall:
@@ -66,27 +63,33 @@ class HttpCall:
         global max_attempt_number
         max_attempt_number = int(number)
 
-    def open(self, req):
+    def printRequest(self, method, url, headers, data):
+        print("------------------------------------------------")
+        print("Method: %s" % method)
+        print("Request url: %s" % url)
+        print("Request headers: %s" % headers)
+        if data is not None:
+            print("Request body: %s" % data)
+
+    def print_response(self, statusCode, headers):
+        print("Response statusCode: %s" % statusCode)
+        print("Response headers: %s" % headers)
+
+    def open(self, printReqFunc, reqFunc, printRespFunc):
 
         try:
-
-            print("------------------------------------------------")
-            print("Method: %s" % req.get_method())
-            print("Request url: %s" % req.get_full_url())
-            print("Request headers: %s" % req.headers)
-            if req.data is not None:
-                print("Request body: %s" % req.data)
+            printReqFunc()
             global lastResponse
-            lastResponse = res = make_request(req)  # urllib.request.urlopen(req)
+            lastResponse = res = make_request(reqFunc)  # urllib.request.urlopen(req)
             print("Success.")
-            print_response(res)
+            printRespFunc(res)
 
         except urllib.error.HTTPError as e:
 
             lastResponse = lastRequestError = res = e
 
             print("HTTPError")
-            print_response(res)
+            printRespFunc(res)
 
         except BaseException as e:
             lastResponse = lastRequestError = res = e
@@ -99,10 +102,31 @@ class HttpCall:
     def request(self, url, args=None, headers={}):
         return urllib.request.Request(url, args, headers)
 
+    def readResponse(self, resp):
+        ret = resp.read()
+        print("Response body: %s" % ret)
+        global lastRequestResult
+        try:
+            lastRequestResult = ret.decode('utf-8')
+        except BaseException as e:
+            print("Can`t decode utf-8. Return as is")
+            lastRequestResult = ret
+        return ret
+
     def read(self, req):
 
         start = time.time()
-        resp = self.open(req)
+
+        def printUrllibRequest():
+          self.printRequest(req.get_method(), req.get_full_url(), req.headers, req.data)
+
+        def http1_1():
+          return urllib.request.urlopen(req)
+
+        def printUrllibResponse(resp):
+          self.print_response(resp.getcode(), resp.info())
+
+        resp = self.open(printUrllibRequest, http1_1, printUrllibResponse)
 
         global lastResponseTime
         lastResponseTime = time.time() - start
@@ -112,15 +136,28 @@ class HttpCall:
 
         if type(resp) != urllib.error.URLError and type(resp) != socket_error and type(resp) != TypeError and type(
                 resp) != AttributeError:
-            ret = resp.read()
-            print("Response body: %s" % ret)
-            global lastRequestResult
-            try:
-                lastRequestResult = ret.decode('utf-8')
-            except BaseException as e:
-                print("Can`t decode utf-8. Return as is")
-                lastRequestResult = ret
+            ret = self.readResponse(resp)
 
+        return ret
+
+    def makeRequest2(self, url, data=None, headers={}):
+        headers.update(g_headers)
+        global host_url
+        c = HTTP20Connection(urllib.parse.urlparse(host_url).netloc)
+        method = "POST"
+
+        def printHyperRequest():
+          self.printRequest(method, self.get_full_url(url), headers, data)
+
+        def http2():
+          c.request(method, url, data, headers)
+          return c.get_response()
+
+        def printHyperResponse(resp):
+          self.print_response(resp.status, resp.headers.items() )
+
+        resp = self.open(printHyperRequest, http2, printHyperResponse)
+        ret = self.readResponse(resp)
         return ret
 
     def GET(self, url, headers={}, args=None):
@@ -177,7 +214,7 @@ class RestTools(HttpCall):
 
     def getRequest(self, url, data=None, headers={}):
         headers.update(g_headers)
-        if data != None:
+        if data != None and hasattr(data, 'encode'):
             data = data.encode('utf-8')
         return self.request(self.get_full_url(url), data, headers)
 
@@ -415,7 +452,7 @@ class RestTools(HttpCall):
 
         fields = []
 
-        for key, value in schema[index_name]['mappings']['objects']['properties'].iteritems():
+        for key, value in schema[index_name]['mappings']['objects']['properties'].items():
 
             if 'fields' in value and '_raw' in value['fields']:
                 fields.append(key)
