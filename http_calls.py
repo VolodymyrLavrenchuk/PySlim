@@ -7,7 +7,7 @@ import time
 import traceback
 import urllib
 import urllib.request
-from hyper import HTTP20Connection
+from hyper import HTTP20Connection, HTTP20Response
 
 from socket import error as socket_error
 
@@ -140,11 +140,10 @@ class HttpCall:
 
         return ret
 
-    def makeRequest2(self, url, data=None, headers={}):
+    def makeRequest2(self, method, url, data=None, headers={}):
         headers.update(g_headers)
         global host_url
-        c = HTTP20Connection(urllib.parse.urlparse(host_url).netloc)
-        method = "POST"
+        c = HTTP20Connection(host=urllib.parse.urlparse(host_url).netloc, force_proto='h2')
 
         def printHyperRequest():
           self.printRequest(method, self.get_full_url(url), headers, data)
@@ -154,7 +153,7 @@ class HttpCall:
           return c.get_response()
 
         def printHyperResponse(resp):
-          self.print_response(resp.status, resp.headers.items() )
+          self.print_response(resp.status, resp.headers )
 
         resp = self.open(printHyperRequest, http2, printHyperResponse)
         ret = self.readResponse(resp)
@@ -411,7 +410,7 @@ class RestTools(HttpCall):
 
     def getStatusCode(self):
         global lastResponse
-        return lastResponse.getcode()
+        return lastResponse.status if type(lastResponse) == HTTP20Response else lastResponse.getcode()
 
     def getResponseTime(self):
 
