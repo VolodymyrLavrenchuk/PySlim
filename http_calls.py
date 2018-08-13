@@ -368,7 +368,7 @@ class RestTools:
         return line.replace('\n', '\\n')
 
     def GET(self, url, headers={}, args=None):
-        self.httpClient.GET(url, headers, args)
+        return self.httpClient.GET(url, headers, args)
 
     def POST(self, url, data="", headers=""):
 
