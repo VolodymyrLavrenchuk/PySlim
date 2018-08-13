@@ -100,24 +100,12 @@ class HttpCallBase(ABC):
     def make_call(self, req):
         pass
 
-    def readResponse(self, resp):
-        ret = resp.read()
-        print("Response body: %s" % ret)
-        global lastRequestResult
-        try:
-            lastRequestResult = ret.decode('utf-8')
-        except BaseException as e:
-            print("Can`t decode utf-8. Return as is")
-            lastRequestResult = ret
-        return ret
-
     def request(self, url, args=None, headers={}):
         return urllib.request.Request(url, args, headers)
 
     def read(self, req):
 
         start = time.time()
-
         resp = self.open(req)
 
         global lastResponseTime
@@ -128,7 +116,14 @@ class HttpCallBase(ABC):
 
         if type(resp) != urllib.error.URLError and type(resp) != socket_error and type(resp) != TypeError and type(
                 resp) != AttributeError:
-            ret = self.readResponse(resp)
+            ret = resp.read()
+            print("Response body: %s" % ret)
+            global lastRequestResult
+            try:
+                lastRequestResult = ret.decode('utf-8')
+            except BaseException as e:
+                print("Can`t decode utf-8. Return as is")
+                lastRequestResult = ret
 
         return ret
 
