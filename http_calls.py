@@ -132,17 +132,6 @@ class HttpCallBase(ABC):
 
         return ret
 
-    def makeRequest2(self, method, url, data=None, headers={}):
-        global host_url
-
-
-        def printHyperResponse(resp):
-          self.print_response(resp.status, resp.headers )
-
-        resp = self.open(printHyperRequest, http2, printHyperResponse)
-        ret = self.readResponse(resp)
-        return ret
-
     def GET(self, url, headers={}, args=None):
 
         if type(headers) == str:
@@ -418,7 +407,7 @@ class RestTools:
 
     def getStatusCode(self):
         global lastResponse
-        return lastResponse.status if type(lastResponse) == HTTP20Response else lastResponse.getcode()
+        return lastResponse.getcode()
 
     def getResponseTime(self):
 
