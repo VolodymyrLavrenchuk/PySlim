@@ -370,6 +370,9 @@ class RestTools:
     def GET(self, url, headers={}, args=None):
         return self.httpClient.GET(url, headers, args)
 
+    def ArrayField(self, value):
+        self.httpClient.ArrayField(value)
+
     def POST(self, url, data="", headers=""):
 
         if(isinstance(data , str)):
