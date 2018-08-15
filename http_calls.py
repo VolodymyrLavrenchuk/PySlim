@@ -8,6 +8,9 @@ import time
 import traceback
 import urllib
 import urllib.request
+from abc import ABC, abstractmethod
+from hyper import HTTP20Connection, HTTP20Response
+
 from socket import error as socket_error
 
 from .ExecuteQuery import Execute
@@ -30,7 +33,7 @@ g_array_field = "hits"
 from .retrying import RetryError, retry
 
 
-def make_request(req):
+def make_request(func, req):
     print("Making request with attempts %s" % max_attempt_number)
 
     def retry_on_exception(exc):
@@ -48,29 +51,26 @@ def make_request(req):
            wait_exponential_multiplier=700,
            wait_jitter_max=3000,
            retry_on_exception=retry_on_exception)
-    def do_with_retry(req):
-        return urllib.request.urlopen(req)
+    def do_with_retry():
+        return func(req)
 
     try:
-        return do_with_retry(req)
+        return do_with_retry()
     except RetryError as e:
         return e.last_attempt.value
 
-
-def print_response(res):
-    print("Response statusCode: %s" % res.getcode())
-    print("Response headers: %s" % res.info())
-
-
-class HttpCall:
+class HttpCallBase(ABC):
     def set_retries_number(self, number):
         global max_attempt_number
         max_attempt_number = int(number)
 
+    def print_response(self, res):
+        print("Response statusCode: %s" % res.getcode())
+        print("Response headers: %s" % res.info())
+
     def open(self, req):
 
         try:
-
             print("------------------------------------------------")
             print("Method: %s" % req.get_method())
             print("Request url: %s" % req.get_full_url())
@@ -78,16 +78,16 @@ class HttpCall:
             if req.data is not None:
                 print("Request body: %s" % req.data)
             global lastResponse
-            lastResponse = res = make_request(req)  # urllib.request.urlopen(req)
+            lastResponse = res = make_request(self.make_call, req)  # urllib.request.urlopen(req)
             print("Success.")
-            print_response(res)
+            self.print_response(res)
 
         except urllib.error.HTTPError as e:
 
             lastResponse = lastRequestError = res = e
 
             print("HTTPError")
-            print_response(res)
+            self.print_response(res)
 
         except BaseException as e:
             lastResponse = lastRequestError = res = e
@@ -96,6 +96,10 @@ class HttpCall:
             raise Exception("Response error %s" % e)
 
         return res
+
+    @abstractmethod
+    def make_call(self, req):
+        pass
 
     def request(self, url, args=None, headers={}):
         return urllib.request.Request(url, args, headers)
@@ -128,10 +132,9 @@ class HttpCall:
         if type(headers) == str:
             headers = json.loads(headers) if len(headers) > 0 else {}
 
-        rqHeaders = {}
+        rqHeaders  = {}
         rqHeaders.update(g_headers)
         rqHeaders.update(headers)
-
         rqHeaders = {k: v for k, v in rqHeaders.items() if v != ""}
 
         if args:
@@ -154,6 +157,26 @@ class HttpCall:
         print("Headers:")
         print(g_headers)
 
+class HttpCall(HttpCallBase):
+    def make_call(self, req):
+        return urllib.request.urlopen(req)
+
+class Http2Call(HttpCallBase):
+    def make_call(self, req):
+        c = HTTP20Connection(host=req.host, force_proto='h2')
+        c.request(req.get_method(), urllib.parse.urlparse(req.full_url).path, req.data, req.headers)
+
+        resp = c.get_response()
+        resp.getcode = lambda: resp.status
+        resp.info = lambda: resp.headers
+        return resp
+
+class RestTools:
+
+    http_headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+
+    httpClient = HttpCall()
+
     def setHostUrl(self, url):
 
         global host_url
@@ -168,22 +191,23 @@ class HttpCall:
         else:
             return host_url + url
 
-
-class RestTools(HttpCall):
-    http_headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+    def setHttpClient(self, obj):
+        self.httpClient = obj()
 
     def format_raw_get(self, url, args=None):
         return json.dumps(self.get_json(url), sort_keys=True)
 
     def getRequest(self, url, data=None, headers={}):
         headers.update(g_headers)
-        return self.request(self.get_full_url(url), data.encode('utf-8'), headers)
+        if data != None and hasattr(data, 'encode'):
+            data = data.encode('utf-8')
+        return self.httpClient.request(self.get_full_url(url), data, headers)
 
     def get_str(self, url, args=None):
-        return self.GET(self.get_full_url(url), {'Accept': 'application/json'}, args).decode('utf-8')
+        return self.httpClient.GET(self.get_full_url(url), {'Accept': 'application/json'}, args).decode('utf-8')
 
     def get_hex_str(self, url, args=None):
-        resp = self.GET(self.get_full_url(url), {'Accept': 'application/json'}, args)
+        resp = self.httpClient.GET(self.get_full_url(url), {'Accept': 'application/json'}, args)
         import binascii
         return binascii.hexlify(resp).decode('utf-8')
 
@@ -247,6 +271,10 @@ class RestTools(HttpCall):
 
         res = self.unpack(res)
         return self.get_attr_by_type(res, attr)
+
+    def getAttributeLengthFromLastResponse(self, attr):
+
+        return len(self.getAttributeFromLastResponse(attr))
 
     def getAttributeFromResponse(self, attr, url, args=None):
         return self.get_attr_by_type(self.get_json(url, args), attr)
@@ -354,30 +382,37 @@ class RestTools(HttpCall):
 
         return line.replace('\n', '\\n')
 
+    def GET(self, url, headers={}, args=None):
+        return self.httpClient.GET(url, headers, args)
+
+    def ArrayField(self, value):
+        self.httpClient.ArrayField(value)
+
     def POST(self, url, data="", headers=""):
 
-        data = data.replace('\n', '\r\n')
+        if(isinstance(data , str)):
+            data = data.replace('\n', '\r\n')
         req = self.getRequest(url, data, json.loads(headers) if headers else self.http_headers)
 
-        return self.read(req)
+        return self.httpClient.read(req)
 
     def PUT(self, url, data=""):
         req = self.getRequest(url, data, self.http_headers)
         req.get_method = lambda: 'PUT'
 
-        return self.read(req)
+        return self.httpClient.read(req)
 
     def DELETE(self, url, data=""):
         req = self.getRequest(url, data, self.http_headers)
         req.get_method = lambda: 'DELETE'
 
-        return self.read(req)
+        return self.httpClient.read(req)
 
     def PATCH(self, url, data=""):
         req = self.getRequest(url, data, self.http_headers)
         req.get_method = lambda: 'PATCH'
 
-        return self.read(req)
+        return self.httpClient.read(req)
 
     def getId(self):
         global lastRequestResult
@@ -426,13 +461,12 @@ class RestTools(HttpCall):
 
         fields = []
 
-        for key, value in schema[index_name]['mappings']['objects']['properties'].iteritems():
+        for key, value in schema[index_name]['mappings']['objects']['properties'].items():
 
             if 'fields' in value and '_raw' in value['fields']:
                 fields.append(key)
 
         return fields
-
 
 class HttpResultAsTable(RestTools, Execute):
     def __init__(self, url, args=None):
