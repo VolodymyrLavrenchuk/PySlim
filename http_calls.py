@@ -132,7 +132,9 @@ class HttpCallBase(ABC):
         if type(headers) == str:
             headers = json.loads(headers) if len(headers) > 0 else {}
 
-        rqHeaders = self.MergeWithGlobal(headers)
+        rqHeaders  = {}
+        rqHeaders.update(g_headers)
+        rqHeaders.update(headers)
         rqHeaders = {k: v for k, v in rqHeaders.items() if v != ""}
 
         if args:
@@ -154,12 +156,6 @@ class HttpCallBase(ABC):
 
         print("Headers:")
         print(g_headers)
-
-    def MergeWithGlobal(self, headers):
-        res = {}
-        res.update(g_headers)
-        res.update(headers)
-        return res
 
 class HttpCall(HttpCallBase):
     def make_call(self, req):
@@ -202,9 +198,10 @@ class RestTools:
         return json.dumps(self.get_json(url), sort_keys=True)
 
     def getRequest(self, url, data=None, headers={}):
+        headers.update(g_headers)
         if data != None and hasattr(data, 'encode'):
             data = data.encode('utf-8')
-        return self.httpClient.request(self.get_full_url(url), data, self.httpClient.MergeWithGlobal(headers))
+        return self.httpClient.request(self.get_full_url(url), data, headers)
 
     def get_str(self, url, args=None):
         return self.httpClient.GET(self.get_full_url(url), {'Accept': 'application/json'}, args).decode('utf-8')
