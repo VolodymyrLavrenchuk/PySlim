@@ -397,6 +397,12 @@ class RestTools:
 
         return self.httpClient.read(req)
 
+    def httpRequest(self, method, url, data=""):
+        req = self.getRequest(url, data, self.http_headers)
+        req.get_method = lambda: method
+
+        return self.httpClient.read(req)
+
     def getId(self):
         global lastRequestResult
         return json.loads(lastRequestResult)['_id']
@@ -404,6 +410,14 @@ class RestTools:
     def getStatusCode(self):
         global lastResponse
         return lastResponse.getcode()
+
+    def getLastResponseHeaders(self):
+        global lastResponse
+        return lastResponse.info()
+        
+    def getLastResponseHeader(self, name):
+        global lastResponse
+        return lastResponse.info()[name]
 
     def getResponseTime(self):
 
