@@ -397,9 +397,9 @@ class RestTools:
 
         return self.httpClient.read(req)
 
-    def httpRequest(self, method, url, data=""):
+    def OPTIONS(self, url, data=""):
         req = self.getRequest(url, data, self.http_headers)
-        req.get_method = lambda: method
+        req.get_method = lambda: 'OPTIONS'
 
         return self.httpClient.read(req)
 
