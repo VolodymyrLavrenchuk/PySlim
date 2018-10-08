@@ -53,3 +53,8 @@
 |GET      |http://py_slim_server:3000/headers|                                                        |
 |check    |get raw request result            |=~/"authorization": "Bearer One"[\s\S]*"previous": "21"/|
 |check not|get raw request result            |=~/"one-request-header"/                                |
+
+!|script|RestTools                                            |
+|OPTIONS|http://py_slim_server:3000/headers|                  |
+|check  |get last response headers         |=~/Content-Length/|
+|check  |get last response header          |Content-Length |0 |
