@@ -1,6 +1,7 @@
 from waferslim.converters import convert_arg, convert_result, StrConverter
 
 import json
+import logging
 import ast
 import re
 import time
@@ -104,7 +105,6 @@ class HttpCallBase(ABC):
         return urllib.request.Request(url, args, headers)
 
     def read(self, req):
-
         start = time.time()
         resp = self.open(req)
 
@@ -222,7 +222,6 @@ class RestTools:
         res = []
 
         try:
-
             resp = self.get_str(url, args)
             if resp:
 
@@ -303,12 +302,30 @@ class RestTools:
     def quoteUrl(self, url):
         return urllib.parse.quote(url)
 
+    def waitSecondTimesUrlResponseCondition(self, wait_sec, retries, url, condition):
+        def func(args):
+            resp = self.get_json(url)
+
+            print("Got condition resp %s" % resp)
+            if resp is None:
+                return False
+            try:
+                result = eval(condition, globals(), locals())
+            except:
+                logging.exception("Failed condtiion")
+                return False
+            print("Got condition result %s" % result)
+            return result
+
+        result = self.wait(wait_sec, retries, func, url=url)
+        return result
+
     def waitSecondTimesUrlResponseAttributeHasValue(self, wait_sec, retries, url, attr, value):
         def func(args):
 
             resp = self.getAttributeFromResponse(args["attr"], args["url"])
 
-            if (resp is None):
+            if resp is None:
                 return False
 
             resp_type = type(resp)
