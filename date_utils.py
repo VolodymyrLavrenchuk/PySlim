@@ -11,26 +11,28 @@ class DateUtils:
 
     def es_date(self, str):
         return d.strptime(str, "%Y-%m-%d %H:%M:%S,%f")
-    
+
     def express_date(self, str):
         return d.strptime(str, "%Y-%m-%d %H:%M:%S.%f")
 
     def nowUtc(self):
         return d.utcnow()
-    
 
     def now(self):
         return d.now()
-        
+
     def nowDate(self):
         return self.now().date()
-    
+
     def nowTime(self):
         return self.now().time()
 
     def nowIso(self):
         return self.now().isoformat()
-        
+
+    def nowIsoUtc(self):
+        return self.nowUtc().isoformat() + "Z"
+
     def addSecondsTo(self,sec, dt):
         return d.strptime(dt, "%Y-%m-%d %H:%M:%S.%f") + timedelta(seconds = int(sec))
 
