@@ -603,7 +603,7 @@ class ResponseAsTable(HttpResultAsTable):
 
 class LastResponseAsTable(HttpResultAsTable):
 
-    def __init__(self):
+    def __init__( self, attr = "hits" ):
 
         body = None
 
@@ -611,7 +611,7 @@ class LastResponseAsTable(HttpResultAsTable):
 
             global lastRequestResult
             print('lastRequestResult: %s' % lastRequestResult)
-            body = self.unpack( json.loads( lastRequestResult ) )
+            body = self.unpack( json.loads( lastRequestResult ), attr )
 
         except BaseException as e:
 
