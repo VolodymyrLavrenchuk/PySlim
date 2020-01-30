@@ -28,15 +28,16 @@ lastResponse = None
 lastResponseTime = None
 
 g_headers = dict()
-g_array_field = "hits"
 
 from .retrying import RetryError, retry
 
 
 def make_request(func, req):
+
     print("Making request with attempts %s" % max_attempt_number)
 
     def retry_on_exception(exc):
+
         print("Exception: %s" % exc)
         if isinstance(exc, urllib.error.HTTPError):
             print("reason: %s" % exc.reason)
@@ -51,7 +52,9 @@ def make_request(func, req):
            wait_exponential_multiplier=700,
            wait_jitter_max=3000,
            retry_on_exception=retry_on_exception)
+
     def do_with_retry():
+
         return func(req)
 
     try:
@@ -59,12 +62,16 @@ def make_request(func, req):
     except RetryError as e:
         return e.last_attempt.value
 
+
 class HttpCallBase(ABC):
+
     def set_retries_number(self, number):
+
         global max_attempt_number
         max_attempt_number = int(number)
 
     def print_response(self, res):
+
         print("Response statusCode: %s" % res.getcode())
         print("Response headers: %s" % res.info())
 
@@ -99,12 +106,15 @@ class HttpCallBase(ABC):
 
     @abstractmethod
     def make_call(self, req):
+
         pass
 
     def request(self, url, args=None, headers={}):
+
         return urllib.request.Request(url, args, headers)
 
     def read(self, req):
+
         start = time.time()
         resp = self.open(req)
 
@@ -144,11 +154,6 @@ class HttpCallBase(ABC):
 
         return self.read(req)
 
-    def ArrayField(self, value):
-
-        global g_array_field
-        g_array_field = value
-
     def Header(self, h, v):
 
         global g_headers
@@ -157,12 +162,18 @@ class HttpCallBase(ABC):
         print("Headers:")
         print(g_headers)
 
+
 class HttpCall(HttpCallBase):
+
     def make_call(self, req):
+
         return urllib.request.urlopen(req)
 
+
 class Http2Call(HttpCallBase):
+
     def make_call(self, req):
+
         c = HTTP20Connection(host=req.host, force_proto='h2')
         c.request(req.get_method(), urllib.parse.urlparse(req.full_url).path, req.data, req.headers)
 
@@ -192,21 +203,26 @@ class RestTools:
             return host_url + url
 
     def setHttpClient(self, obj):
+
         self.httpClient = obj()
 
     def format_raw_get(self, url, args=None):
+
         return json.dumps(self.get_json(url), sort_keys=True)
 
     def getRequest(self, url, data=None, headers={}):
+
         headers.update(g_headers)
         if data != None and hasattr(data, 'encode'):
             data = data.encode('utf-8')
         return self.httpClient.request(self.get_full_url(url), data, headers)
 
     def get_str(self, url, args=None):
+
         return self.httpClient.GET(self.get_full_url(url), {'Accept': 'application/json'}, args).decode('utf-8')
 
     def get_hex_str(self, url, args=None):
+
         resp = self.httpClient.GET(self.get_full_url(url), {'Accept': 'application/json'}, args)
         import binascii
         return binascii.hexlify(resp).decode('utf-8')
@@ -219,16 +235,15 @@ class RestTools:
         return data.group(1)
 
     def get_json(self, url, args=None):
+
         res = []
 
         try:
             resp = self.get_str(url, args)
             if resp:
 
-                res = json.loads(resp)
-                if type(res) == dict:
-                    if g_array_field in res:
-                        res = res[g_array_field]
+                res =  self.unpack( json.loads(resp) )
+
         except ValueError:
 
             print("Failed to parse json")
@@ -236,54 +251,50 @@ class RestTools:
         print("get_json result: %s" % res)
         return res
 
-    def get_attr_by_type(self, data, attr):
+    def get_attr( self, data, attr ):
 
         res = data
-        index = 0
-        for a in attr.split('.'):
 
-            match = re.match('^(\w*)\[([0-9])\]', a)
+        for a in attr.split( '.' ):
+
+            match = re.match( '^(\w*)\[([0-9])\]', a )
+
             if match:
-                a = match.group(1)
-                index = int(match.group(2))
-
-            if len(res) > 0:
-                types = {
-                    dict: lambda: res[a] if a in res else res,
-                    list: lambda: res[index][a]
-                }
-                res = types[type(res)]()
+                res = res[ match.group( 1 ) ][ int( match.group( 2 ) ) ]
+            else:
+                res = res[ a ]
 
         return res
 
-    def unpack(self, res):
+    def unpack( self, data, attr = "hits" ):
 
-        if type(res) == dict:
-            if g_array_field in res:
-                res = res[g_array_field]
+        if type( data ) == dict:
+            data = self.get_attr( data, attr )
 
-        return res
+        return data
 
-    def getAttributeFromLastResponse(self, attr):
+    def getAttributeFromLastResponse( self, attr, field = "hits" ):
 
         import json
         res = json.loads(lastRequestResult)
 
-        res = self.unpack(res)
-        return self.get_attr_by_type(res, attr)
+        res = self.unpack( res, field )
+        return self.get_attr( res, attr )
 
     def getAttributeLengthFromLastResponse(self, attr):
 
         return len(self.getAttributeFromLastResponse(attr))
 
     def getAttributeFromResponse(self, attr, url, args=None):
-        return self.get_attr_by_type(self.get_json(url, args), attr)
+
+        return self.get_attr( self.get_json( url, args ), attr )
 
     def getAttributeFromResponseAsString(self, attr, url, args=None):
 
         return str(self.getAttributeFromResponse(attr, url, args))
 
     def currentTimeDiff(self, attr, url, args=None):
+
         return DateUtils().js_time_diff(self.getAttributeFromResponse(attr, url, args))
 
     def wait(self, wait_sec, retries, func, **kwargs):
@@ -300,10 +311,13 @@ class RestTools:
         return False
 
     def quoteUrl(self, url):
+
         return urllib.parse.quote(url)
 
     def waitSecondTimesUrlResponseCondition(self, wait_sec, retries, url, condition):
+
         def func(args):
+
             resp = self.get_json(url)
 
             print("Got condition resp %s" % resp)
@@ -321,6 +335,7 @@ class RestTools:
         return result
 
     def waitSecondTimesUrlResponseAttributeHasValue(self, wait_sec, retries, url, attr, value):
+
         def func(args):
 
             resp = self.getAttributeFromResponse(args["attr"], args["url"])
@@ -339,6 +354,7 @@ class RestTools:
         return result
 
     def waitSecondTimesUrlResponseAttributeNotZero(self, wait_sec, retries, url, attr):
+
         def func(args):
 
             resp = self.getAttributeFromResponse(args["attr"], args["url"])
@@ -351,7 +367,9 @@ class RestTools:
         return self.wait(wait_sec, retries, func, attr=attr, url=url)
 
     def waitSecondTimesUrlResponseAttributeNotEmpty(self, wait_sec, retries, url, attr):
+
         def func(args):
+
             resp = self.getAttributeFromResponse(args["attr"], args["url"])
 
             if resp:
@@ -383,10 +401,8 @@ class RestTools:
         return line.replace('\n', '\\n')
 
     def GET(self, url, headers={}, args=None):
-        return self.httpClient.GET(url, headers, args)
 
-    def ArrayField(self, value):
-        self.httpClient.ArrayField(value)
+        return self.httpClient.GET(url, headers, args)
 
     def POST(self, url, data="", headers=""):
 
@@ -397,42 +413,50 @@ class RestTools:
         return self.httpClient.read(req)
 
     def PUT(self, url, data=""):
+
         req = self.getRequest(url, data, self.http_headers)
         req.get_method = lambda: 'PUT'
 
         return self.httpClient.read(req)
 
     def DELETE(self, url, data=""):
+
         req = self.getRequest(url, data, self.http_headers)
         req.get_method = lambda: 'DELETE'
 
         return self.httpClient.read(req)
 
     def PATCH(self, url, data=""):
+
         req = self.getRequest(url, data, self.http_headers)
         req.get_method = lambda: 'PATCH'
 
         return self.httpClient.read(req)
 
     def OPTIONS(self, url, data=""):
+
         req = self.getRequest(url, data, self.http_headers)
         req.get_method = lambda: 'OPTIONS'
 
         return self.httpClient.read(req)
 
     def getId(self):
+
         global lastRequestResult
         return json.loads(lastRequestResult)['_id']
 
     def getStatusCode(self):
+
         global lastResponse
         return lastResponse.getcode()
 
     def getLastResponseHeaders(self):
+
         global lastResponse
         return lastResponse.info()
         
     def getLastResponseHeader(self, name):
+
         global lastResponse
         return lastResponse.info()[name]
 
@@ -449,11 +473,7 @@ class RestTools:
     def findAttributeByName(self, keyName, keyValue, attrName):
 
         global lastRequestResult
-        res = json.loads(lastRequestResult)
-
-        if type(res) == dict:
-            if g_array_field in res:
-                res = res[g_array_field]
+        res = self.unpack( json.loads( lastRequestResult ) )
 
         val = [r[attrName] for r in res if r[keyName] == keyValue]
 
@@ -482,12 +502,12 @@ class RestTools:
 
         return fields
 
+
 class HttpResultAsTable(RestTools, Execute):
+
     def __init__(self, url, args=None):
-        self.result = self.get_json(url, args)
-        if type(self.result) == dict:
-            if g_array_field in self.result:
-                self.result = self.result[g_array_field]
+
+        self.result = self.unpack( self.get_json( url, args ) )
 
     def get_dataset(self):
 
@@ -547,7 +567,9 @@ class HttpResultAsTable(RestTools, Execute):
 
 
 class LastResultAsTable(HttpResultAsTable):
+
     def __init__(self):
+
         global lastRequestResult
 
         o = json.loads(lastRequestResult)
@@ -560,17 +582,19 @@ class LastResultAsTable(HttpResultAsTable):
 
 
 class LastRawResultAsTable(HttpResultAsTable):
+
     def __init__(self):
+
         global lastRequestResult
         self.result = json.loads(lastRequestResult)
         print('OUTPUT: ', self.result)
 
 
 class ResponseAsTable(HttpResultAsTable):
+
     def __init__(self, url, args=None):
-        body = self.get_json(url, args)
-        if type(body) == dict and g_array_field in body:
-            body = body[g_array_field]
+
+        body = self.unpack( self.get_json( url, args ) )
 
         global lastResponse
         print(lastResponse.info())
@@ -578,16 +602,16 @@ class ResponseAsTable(HttpResultAsTable):
 
 
 class LastResponseAsTable(HttpResultAsTable):
+
     def __init__(self):
+
         body = None
 
         try:
 
             global lastRequestResult
             print('lastRequestResult: %s' % lastRequestResult)
-            body = json.loads(lastRequestResult)
-            if type(body) == dict and g_array_field in body:
-                body = body[g_array_field]
+            body = self.unpack( json.loads( lastRequestResult ) )
 
         except BaseException as e:
 
@@ -600,7 +624,9 @@ class LastResponseAsTable(HttpResultAsTable):
 
 
 class BodyFromTable(RestTools):
+
     def __init__(self, method, url, count=1, query=None, args=None):
+
         self.method = method
         self.url = url
         self.ids = []
@@ -632,15 +658,18 @@ class BodyFromTable(RestTools):
 
     @convert_arg(to_type=dict)
     def convert_from_hashtable(self, data):
+
         return data
 
     def check_hashtable(self, val):
+
         if isinstance(val, str) and val.find("hash_table") != -1:
             return self.convert_from_hashtable(re.sub('\t|\n|\r', '', val))
         else:
             return val
 
     def parse_json(self, val):
+
         try:
             return json.loads(val)
         except BaseException as e:
@@ -684,6 +713,7 @@ class BodyFromTable(RestTools):
         self.makeRequestWithBody()
 
     def makeUrl(self, data, id):
+
         if not id:
             return self.url
         return self.url + '/' + id
@@ -712,49 +742,66 @@ class BodyFromTable(RestTools):
                 print("Get json from response \"%s\" error: %s" % (ret, e))
 
     def makeRequestWithBody(self):
+
         pass
 
 
 class Post(BodyFromTable):
+
     def __init__(self, url, count=1, query=None, args=None):
+
         BodyFromTable.__init__(self, "POST", url, count, query, args)
 
 
 class Put(BodyFromTable):
+
     def __init__(self, url, count=1, query=None, args=None):
+
         BodyFromTable.__init__(self, "PUT", url, count, query, args)
 
 
 class Patch(BodyFromTable):
+
     def __init__(self, url):
+
         BodyFromTable.__init__(self, "PATCH", url)
 
 
 class Delete(BodyFromTable):
+
     def __init__(self, url):
+
         BodyFromTable.__init__(self, "DELETE", url)
 
 
 class Bulk(BodyFromTable):
+
     def __init__(self, url, method):
+
         self.body = []
         self.method = method
         BodyFromTable.__init__(self, method, url)
 
     def processRow(self, data, id):
+
         data.update({'_id': id})
         self.body += [data]
 
     def makeRequestWithBody(self):
+
         body = '\n'.join(map(lambda x: json.dumps(x), self.body))
         print(getattr(self, self.method)(self.url, body))
 
 
 class BulkPost(Bulk):
+
     def __init__(self, url):
+
         Bulk.__init__(self, url, 'POST')
 
 
 class BulkPatch(Bulk):
+
     def __init__(self, url):
+
         Bulk.__init__(self, url, 'PATCH')
