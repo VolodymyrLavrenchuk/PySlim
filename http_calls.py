@@ -254,7 +254,7 @@ class RestTools:
     def get_attr( self, data, attr ):
 
         res = data
-
+        
         for a in attr.split( '.' ):
 
             match = re.match( '^(\w*)\[([0-9])\]', a )
@@ -568,14 +568,15 @@ class HttpResultAsTable(RestTools, Execute):
 
 class LastResultAsTable(HttpResultAsTable):
 
-    def __init__(self):
+    def __init__( self, attr = "hits" ):
 
         global lastRequestResult
 
-        o = json.loads(lastRequestResult)
+        o = self.unpack( json.loads( lastRequestResult ), attr )
         self.result = o
+
         if type(o) == dict and "hits" in o:
-            self.result = o['hits']['hits']
+            self.result = o['hits']
         elif type(o) == dict and "docs" in o:
             self.result = o['docs']
         print('OUTPUT: ', self.result)
@@ -603,7 +604,7 @@ class ResponseAsTable(HttpResultAsTable):
 
 class LastResponseAsTable(HttpResultAsTable):
 
-    def __init__( self, attr = "hits" ):
+    def __init__( self ):
 
         body = None
 
@@ -611,7 +612,7 @@ class LastResponseAsTable(HttpResultAsTable):
 
             global lastRequestResult
             print('lastRequestResult: %s' % lastRequestResult)
-            body = self.unpack( json.loads( lastRequestResult ), attr )
+            body = self.unpack( json.loads( lastRequestResult ) )
 
         except BaseException as e:
 
