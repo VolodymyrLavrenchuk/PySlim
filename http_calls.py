@@ -241,8 +241,7 @@ class RestTools:
         try:
             resp = self.get_str(url, args)
             if resp:
-
-                res = json.loads( resp )
+                res = self.get_table_data( json.loads( resp ) )
 
         except ValueError:
 
@@ -270,15 +269,27 @@ class RestTools:
 
         print( "unpack, attr: %s, data: %s" % ( attr, data ) )
 
-        if type( data ) == dict:
-            data = self.get_attr( data, attr )
+        if attr == "hits":
+            if type( data ) == dict and attr in data:
+                return data[ attr ]
+        else:
+            if type( data ) == dict:
+                return self.get_attr( data, attr )
 
         return data
 
-    def getAttributeFromLastResponse( self, attr, field = "hits" ):
+    def get_table_data( self, data ):
 
-        res = self.unpack( json.loads( lastRequestResult ), field )
-        return self.get_attr( res, attr )
+        if type( data ) == dict and "hits" in data:
+            return data[ "hits" ]
+        elif type( data ) == dict and "docs" in data:
+            return data[ "docs" ]
+
+        return data
+
+    def getAttributeFromLastResponse( self, attr ):
+
+        return self.unpack( json.loads( lastRequestResult ), attr )
 
     def getAttributeLengthFromLastResponse(self, attr):
 
@@ -286,7 +297,7 @@ class RestTools:
 
     def getAttributeFromResponse(self, attr, url, args=None):
 
-        return self.get_attr( self.get_json( url, args ), attr )
+        return self.unpack( self.get_json( url, args ), attr )
 
     def getAttributeFromResponseAsString(self, attr, url, args=None):
 
@@ -506,15 +517,8 @@ class HttpResultAsTable(RestTools, Execute):
 
     def __init__(self, url, args=None):
 
-        self.result = self._get_data( self.unpack( self.get_json( url, args ) ) )
+        self.result = self.get_table_data( self.unpack( self.get_json( url, args ) ) )
         print( "HttpResultAsTable data: ", self.result )
-
-    def _get_data( self, data ):
-
-        if type( data ) == dict and "hits" in data:
-            return data[ "hits" ]
-        elif type( data ) == dict and "docs" in data:
-            return data[ "docs" ]
 
     def get_dataset(self):
 
@@ -578,7 +582,7 @@ class LastResultAsTable(HttpResultAsTable):
     def __init__( self, attr = "hits" ):
 
         global lastRequestResult
-        self.result = self._get_data( self.unpack( json.loads( lastRequestResult ), attr ) )
+        self.result = self.get_table_data( self.unpack( json.loads( lastRequestResult ), attr ) )
         print( "LastResultAsTable data: ", self.result )
 
 
@@ -588,20 +592,21 @@ class LastRawResultAsTable(HttpResultAsTable):
 
         global lastRequestResult
         self.result = json.loads(lastRequestResult)
-        print('OUTPUT: ', self.result)
+        print('LastRawResultAsTable data: ', self.result)
 
 
 class ResponseAsTable(HttpResultAsTable):
 
     def __init__(self, url, args=None):
 
-        body = self.get_json( url, args )
+        body = self.get_table_data( self.get_json( url, args ) )
 
         global lastResponse
         print(lastResponse.info())
         self.result = {'status_code': lastResponse.getcode(), 'headers': lastResponse.info(), 'body': body}
+        print('ResponseAsTable data: ', self.result)
 
-
+ 
 class LastResponseAsTable(HttpResultAsTable):
 
     def __init__( self ):
@@ -612,7 +617,7 @@ class LastResponseAsTable(HttpResultAsTable):
 
             global lastRequestResult
             print('lastRequestResult: %s' % lastRequestResult)
-            body = json.loads( lastRequestResult )
+            body = self.get_table_data( json.loads( lastRequestResult ) )
 
         except BaseException as e:
 
@@ -622,6 +627,7 @@ class LastResponseAsTable(HttpResultAsTable):
         global lastResponse
 
         self.result = {'status_code': lastResponse.getcode(), 'headers': lastResponse.info(), 'body': body}
+        print('LastResponseAsTable data: ', self.result)
 
 
 class BodyFromTable(RestTools):
