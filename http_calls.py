@@ -259,7 +259,7 @@ class RestTools:
             match = re.match( '^(\w*)\[([0-9])\]', a )
 
             if match:
-                res = res[ match.group( 1 ) ][ int( match.group( 2 ) ) ]
+                res = res[ match.group( 1 ) ][ int( match.group( 2 ) ) ] if len( match.group( 1 ) ) > 0 else res[ int( match.group( 2 ) ) ]
             else:
                 res = res[ a ]
 
