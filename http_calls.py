@@ -273,7 +273,7 @@ class RestTools:
             if type( data ) == dict and attr in data:
                 return data[ attr ]
         else:
-            if type( data ) == dict:
+            if type( data ) == dict or type( data ) == list:
                 return self.get_attr( data, attr )
 
         return data
