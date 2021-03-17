@@ -374,6 +374,15 @@ class RestTools:
 
         return self.wait(wait_sec, retries, func)
 
+    def waitSecondTimesUrlResponseArrayHasLength( self, wait_sec, retries, url, length ):
+
+        def func( args ):
+
+            res = self.get_json( args[ "url" ] )
+            return isinstance( res, list ) and len( res ) == int( length )
+
+        return self.wait( wait_sec, retries, func, url = url )
+
     def sleep(self, sec):
 
         time.sleep(float(sec))
