@@ -648,7 +648,7 @@ class BodyFromTable(RestTools):
                 if h == "_id?":
                     setattr(self, "_id", lambda self=self: self.ids.pop(0))
                 else:
-                    bad_chars = [';', ':', '!', "*", " ", '$']
+                    bad_chars = [';', ':', '!', '*', ' ', '$']
                     for i in bad_chars : 
                         h = h.replace(i, '')
                     attr = "set%s" % str.replace(h, h[0], h[0].upper(), 1)
@@ -664,21 +664,23 @@ class BodyFromTable(RestTools):
                     vars = ''
                     for idx in range(len(header)):
                         coll_name = header[idx]
+                        logging.getLogger(_LOGGER_NAME).info(coll_name)
 
                         if coll_name == '_id':
                             id = row[idx]
+                        elif coll_name.startswith('#'):
+                            logging.getLogger(_LOGGER_NAME).info('skip:'+coll_name)
                         elif re.match('.*\?$', coll_name):
+                            logging.getLogger(_LOGGER_NAME).info('skip:'+coll_name)
                             pass
                         else:
                             if not self.isUndefined(row[idx]):
                                 val = row[idx]
                                 logging.getLogger(_LOGGER_NAME).info(json.dumps(val))
-                                #data[header[idx]] = self.check_hashtable(self.check_dict(self.check_bool(val)))
-                                #logging.getLogger(_LOGGER_NAME).info(json.dumps(data))
                                 quot = ''
-                                if header[idx].endswith('String'):
+                                if coll_name.endswith('String'):
                                     quot='"'
-                                vars = vars + sep + header[idx] + ' = ' + quot + str(self.check_hashtable(self.check_dict(self.check_bool(val)))) + quot
+                                vars = vars + sep + coll_name + ' = ' + quot + str(self.check_hashtable(self.check_dict(self.check_bool(val)))) + quot
                                 sep = ', '
                     if vars != '':
                         vars = '(' + vars + ')'
@@ -687,6 +689,21 @@ class BodyFromTable(RestTools):
 
         self.makeRequestWithBody()
         logging.getLogger(_LOGGER_NAME).info('end')
+
+    def itemsId(self):
+        global lastRequestResult
+
+        o = json.loads(lastRequestResult)
+        logging.getLogger(_LOGGER_NAME).info('o' + str(o))
+        result = o
+        if type(o) == dict and "data" in o:
+            result = o['data']['listPatients']['items'][0]['id']
+            logging.getLogger(_LOGGER_NAME).info('items.id' + str(result))
+        return str(result)
+
+    def httpResult(self):
+        global lastResponse
+        return lastResponse.getcode()
 
     def makeUrl(self, data, id):
         if not id:
