@@ -380,7 +380,17 @@ class RestTools:
             data = data.replace('\n', '\r\n')
         logging.getLogger(_LOGGER_NAME).info(data)
         req = self.getRequest(url, data, json.loads(headers) if headers else self.http_headers)
-        #print('req.:data' + req.data)
+        logging.getLogger(_LOGGER_NAME).info('end')
+        return self.httpClient.read(req)
+
+    def GraphqlMutation(self, url, data="", headers=""):
+        logging.getLogger(_LOGGER_NAME).info('begin')
+
+        print('data:' + data)
+        if(isinstance(data , str)):
+            data = data.replace('\n', '\r\n')
+        logging.getLogger(_LOGGER_NAME).info(data)
+        req = self.getRequest(url, data, json.loads(headers) if headers else self.http_headers)
         logging.getLogger(_LOGGER_NAME).info('end')
         return self.httpClient.read(req)
 
@@ -572,7 +582,8 @@ class LastResponseAsTable(HttpResultAsTable):
 
 
 class BodyFromTable(RestTools):
-    def __init__(self, method, url, body, count=1, query=None, args=None):
+    def __init__(self, method, url, count=1, query=None, args=None, body=None, prefix=None):
+        logging.getLogger(_LOGGER_NAME).info('begin')
         self.method = method
         self.url = url
         self.ids = []
@@ -580,6 +591,7 @@ class BodyFromTable(RestTools):
         self.query = query
         self.args = args
         self.body = body
+        self.prefix = prefix
 
     def check_bool(self, val):
 
@@ -628,7 +640,7 @@ class BodyFromTable(RestTools):
 
         if type(rows) != tuple:
             data = {}
-            data['query'] = self.method + self.body
+            data['query'] = self.prefix + self.body
             self.processRow(data, "")
         else:
             header = rows[0]
@@ -636,7 +648,12 @@ class BodyFromTable(RestTools):
                 if h == "_id?":
                     setattr(self, "_id", lambda self=self: self.ids.pop(0))
                 else:
-                    setattr(self, "set%s" % str.replace(h, h[0], h[0].upper(), 1), lambda x: x)
+                    bad_chars = [';', ':', '!', "*", " ", '$']
+                    for i in bad_chars : 
+                        h = h.replace(i, '')
+                    attr = "set%s" % str.replace(h, h[0], h[0].upper(), 1)
+                    logging.getLogger(_LOGGER_NAME).info('attr:' + attr)
+                    setattr(self, attr, lambda x: x)
 
             for item in range(int(self.count)):
 
@@ -646,19 +663,26 @@ class BodyFromTable(RestTools):
                     sep = ''
                     vars = ''
                     for idx in range(len(header)):
-                        if not self.isUndefined(row[idx]):
-                            val = row[idx]
-                            logging.getLogger(_LOGGER_NAME).info(json.dumps(val))
-                            #data[header[idx]] = self.check_hashtable(self.check_dict(self.check_bool(val)))
-                            #logging.getLogger(_LOGGER_NAME).info(json.dumps(data))
-                            quot = ''
-                            if header[idx].endswith('String'):
-                                quot='"'
-                            vars = vars + sep + header[idx] + ' = ' + quot + str(self.check_hashtable(self.check_dict(self.check_bool(val)))) + quot
-                            sep = ', '
+                        coll_name = header[idx]
+
+                        if coll_name == '_id':
+                            id = row[idx]
+                        elif re.match('.*\?$', coll_name):
+                            pass
+                        else:
+                            if not self.isUndefined(row[idx]):
+                                val = row[idx]
+                                logging.getLogger(_LOGGER_NAME).info(json.dumps(val))
+                                #data[header[idx]] = self.check_hashtable(self.check_dict(self.check_bool(val)))
+                                #logging.getLogger(_LOGGER_NAME).info(json.dumps(data))
+                                quot = ''
+                                if header[idx].endswith('String'):
+                                    quot='"'
+                                vars = vars + sep + header[idx] + ' = ' + quot + str(self.check_hashtable(self.check_dict(self.check_bool(val)))) + quot
+                                sep = ', '
                     if vars != '':
                         vars = '(' + vars + ')'
-                    data['query'] = self.method + vars + self.body
+                    data['query'] = self.prefix + vars + self.body
                     self.processRow(data, id)
 
         self.makeRequestWithBody()
@@ -673,7 +697,7 @@ class BodyFromTable(RestTools):
         logging.getLogger(_LOGGER_NAME).info('begin')
         logging.getLogger(_LOGGER_NAME).info(json.dumps(data))
 
-        func = getattr(self, "GraphqlQuery")
+        func = getattr(self, self.method)
         url = self.makeUrl(data, id)
 
         #ct = g_headers.get("Content-Type")
@@ -699,8 +723,20 @@ class BodyFromTable(RestTools):
     def makeRequestWithBody(self):
         pass
 
+    def execute(self):
+        pass
+
+    def reset(self):
+        pass
+
+    def beginTable(self):
+        pass
+
+    def endTable(self):
+        pass
+
 class GraphqlQuery(BodyFromTable):
-    def __init__(self, url, count=1, query=None, args=None):
+    def __init__(self, url, count=1, query=None, args=None, body=None, prefix=None):
         global host_url
         logging.getLogger(_LOGGER_NAME).info('GraphqlQuery(BodyFromTable)')
         logging.getLogger(_LOGGER_NAME).info(host_url)
@@ -708,13 +744,13 @@ class GraphqlQuery(BodyFromTable):
         logging.getLogger(_LOGGER_NAME).info(json.dumps(query))
         logging.getLogger(_LOGGER_NAME).info(json.dumps(args))
         logging.getLogger(_LOGGER_NAME).info(json.dumps(count))
-        BodyFromTable.__init__(self, "query MyQuery", host_url, url, count, query, args)
+        BodyFromTable.__init__(self, "GraphqlQuery", host_url, count, query, args, url, "query MyQuery")
 
 class GraphqlMutation(BodyFromTable):
-    def __init__(self, url, count=1, query=None, args=None):
+    def __init__(self, url, count=1, query=None, args=None, body=None, prefix=None):
         global host_url
-        logging.getLogger(_LOGGER_NAME).info('GraphqlQuery(BodyFromTable)')
+        logging.getLogger(_LOGGER_NAME).info('GraphqlMutation(BodyFromTable)')
         logging.getLogger(_LOGGER_NAME).info(host_url)
         logging.getLogger(_LOGGER_NAME).info(json.dumps(url))
         logging.getLogger(_LOGGER_NAME).info(json.dumps(args))
-        BodyFromTable.__init__(self, "mutation MyMutation", host_url, url, count, query, args)
+        BodyFromTable.__init__(self, "GraphqlMutation", host_url, count, query, args, url, "mutation MyMutation")
