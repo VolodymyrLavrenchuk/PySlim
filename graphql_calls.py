@@ -1,6 +1,7 @@
 from waferslim.converters import convert_arg, convert_result, StrConverter
 
 import json
+import sys
 import logging
 import ast
 import re
@@ -9,16 +10,16 @@ import traceback
 import urllib
 import urllib.request
 from abc import ABC, abstractmethod
-from hyper import HTTP20Connection, HTTP20Response
 
 from socket import error as socket_error
 
 from .ExecuteQuery import Execute
 from .date_utils import DateUtils
+from .retrying import RetryError, retry
 
 global lastRequestError
 global lastResponse
-
+global host_url
 global max_attempt_number
 max_attempt_number = 5
 
@@ -30,10 +31,11 @@ lastResponseTime = None
 g_headers = dict()
 g_array_field = "hits"
 
-from .retrying import RetryError, retry
-
+_LOGGER_NAME = 'PySlim'
+logging.getLogger(_LOGGER_NAME).setLevel(logging.DEBUG)
 
 def make_request(func, req):
+    logging.getLogger(_LOGGER_NAME).info('begin')
     print("Making request with attempts %s" % max_attempt_number)
 
     def retry_on_exception(exc):
@@ -69,6 +71,7 @@ class HttpCallBase(ABC):
         print("Response headers: %s" % res.info())
 
     def open(self, req):
+        logging.getLogger(_LOGGER_NAME).info('begin')
 
         try:
             print("------------------------------------------------")
@@ -77,6 +80,7 @@ class HttpCallBase(ABC):
             print("Request headers: %s" % req.headers)
             if req.data is not None:
                 print("Request body: %s" % req.data)
+            print(req.data)
             global lastResponse
             lastResponse = res = make_request(self.make_call, req)  # urllib.request.urlopen(req)
             print("Success.")
@@ -95,6 +99,7 @@ class HttpCallBase(ABC):
             print("Response error: %s" % e)
             raise Exception("Response error %s" % e)
 
+        logging.getLogger(_LOGGER_NAME).info('end')
         return res
 
     @abstractmethod
@@ -105,6 +110,7 @@ class HttpCallBase(ABC):
         return urllib.request.Request(url, args, headers)
 
     def read(self, req):
+        logging.getLogger(_LOGGER_NAME).info('begin')
         start = time.time()
         resp = self.open(req)
 
@@ -125,24 +131,8 @@ class HttpCallBase(ABC):
                 print("Can`t decode utf-8. Return as is")
                 lastRequestResult = ret
 
+        logging.getLogger(_LOGGER_NAME).info('end')
         return ret
-
-    def GET(self, url, headers={}, args=None):
-
-        if type(headers) == str:
-            headers = json.loads(headers) if len(headers) > 0 else {}
-
-        rqHeaders  = {}
-        rqHeaders.update(g_headers)
-        rqHeaders.update(headers)
-        rqHeaders = {k: v for k, v in rqHeaders.items() if v != ""}
-
-        if args:
-            url = url + urllib.parse.quote(args, '=&')
-
-        req = self.request(url, None, rqHeaders)
-
-        return self.read(req)
 
     def ArrayField(self, value):
 
@@ -160,16 +150,6 @@ class HttpCallBase(ABC):
 class HttpCall(HttpCallBase):
     def make_call(self, req):
         return urllib.request.urlopen(req)
-
-class Http2Call(HttpCallBase):
-    def make_call(self, req):
-        c = HTTP20Connection(host=req.host, force_proto='h2')
-        c.request(req.get_method(), urllib.parse.urlparse(req.full_url).path, req.data, req.headers)
-
-        resp = c.get_response()
-        resp.getcode = lambda: resp.status
-        resp.info = lambda: resp.headers
-        return resp
 
 class RestTools:
 
@@ -198,12 +178,17 @@ class RestTools:
         return json.dumps(self.get_json(url), sort_keys=True)
 
     def getRequest(self, url, data=None, headers={}):
+        logging.getLogger(_LOGGER_NAME).info('begin')
         headers.update(g_headers)
+        print('getRequest:' + data)
         if data != None and hasattr(data, 'encode'):
             data = data.encode('utf-8')
+        #print('getRequest:' + data)
+        logging.getLogger(_LOGGER_NAME).info('end')
         return self.httpClient.request(self.get_full_url(url), data, headers)
 
     def get_str(self, url, args=None):
+        logging.getLogger(_LOGGER_NAME).info(url)
         return self.httpClient.GET(self.get_full_url(url), {'Accept': 'application/json'}, args).decode('utf-8')
 
     def get_hex_str(self, url, args=None):
@@ -220,9 +205,11 @@ class RestTools:
 
     def get_json(self, url, args=None):
         res = []
+        logging.getLogger(_LOGGER_NAME).info(url)
 
         try:
             resp = self.get_str(url, args)
+            logging.getLogger(_LOGGER_NAME).info(resp)
             if resp:
 
                 res = json.loads(resp)
@@ -382,36 +369,19 @@ class RestTools:
 
         return line.replace('\n', '\\n')
 
-    def GET(self, url, headers={}, args=None):
-        return self.httpClient.GET(url, headers, args)
-
     def ArrayField(self, value):
         self.httpClient.ArrayField(value)
 
-    def POST(self, url, data="", headers=""):
+    def GraphqlQuery(self, url, data="", headers=""):
+        logging.getLogger(_LOGGER_NAME).info('begin')
 
+        print('data:' + data)
         if(isinstance(data , str)):
             data = data.replace('\n', '\r\n')
+        logging.getLogger(_LOGGER_NAME).info(data)
         req = self.getRequest(url, data, json.loads(headers) if headers else self.http_headers)
-
-        return self.httpClient.read(req)
-
-    def PUT(self, url, data=""):
-        req = self.getRequest(url, data, self.http_headers)
-        req.get_method = lambda: 'PUT'
-
-        return self.httpClient.read(req)
-
-    def DELETE(self, url, data=""):
-        req = self.getRequest(url, data, self.http_headers)
-        req.get_method = lambda: 'DELETE'
-
-        return self.httpClient.read(req)
-
-    def PATCH(self, url, data=""):
-        req = self.getRequest(url, data, self.http_headers)
-        req.get_method = lambda: 'PATCH'
-
+        #print('req.:data' + req.data)
+        logging.getLogger(_LOGGER_NAME).info('end')
         return self.httpClient.read(req)
 
     def OPTIONS(self, url, data=""):
@@ -556,6 +526,8 @@ class LastResultAsTable(HttpResultAsTable):
             self.result = o['hits']['hits']
         elif type(o) == dict and "docs" in o:
             self.result = o['docs']
+        elif type(o) == dict and "data" in o:
+            self.result = o['data']['listPatients']['items']
         print('OUTPUT: ', self.result)
 
 
@@ -600,13 +572,14 @@ class LastResponseAsTable(HttpResultAsTable):
 
 
 class BodyFromTable(RestTools):
-    def __init__(self, method, url, count=1, query=None, args=None):
+    def __init__(self, method, url, body, count=1, query=None, args=None):
         self.method = method
         self.url = url
         self.ids = []
         self.count = count
         self.query = query
         self.args = args
+        self.body = body
 
     def check_bool(self, val):
 
@@ -651,9 +624,12 @@ class BodyFromTable(RestTools):
         return val == "undefined"
 
     def table(self, rows):
+        logging.getLogger(_LOGGER_NAME).info('begin')
 
         if type(rows) != tuple:
-            self.processRow({}, "")
+            data = {}
+            data['query'] = self.method + self.body
+            self.processRow(data, "")
         else:
             header = rows[0]
             for h in header:
@@ -667,21 +643,26 @@ class BodyFromTable(RestTools):
                 for row in rows[1:]:
                     data = {}
                     id = ""
+                    sep = ''
+                    vars = ''
                     for idx in range(len(header)):
-                        coll_name = header[idx]
-
-                        if coll_name == '_id':
-                            id = row[idx]
-                        elif re.match('.*\?$', coll_name):
-                            pass
-                        else:
-                            if not self.isUndefined(row[idx]):
-                                val = row[idx]
-                                data[header[idx]] = self.check_hashtable(self.check_dict(self.check_bool(val)))
-
+                        if not self.isUndefined(row[idx]):
+                            val = row[idx]
+                            logging.getLogger(_LOGGER_NAME).info(json.dumps(val))
+                            #data[header[idx]] = self.check_hashtable(self.check_dict(self.check_bool(val)))
+                            #logging.getLogger(_LOGGER_NAME).info(json.dumps(data))
+                            quot = ''
+                            if header[idx].endswith('String'):
+                                quot='"'
+                            vars = vars + sep + header[idx] + ' = ' + quot + str(self.check_hashtable(self.check_dict(self.check_bool(val)))) + quot
+                            sep = ', '
+                    if vars != '':
+                        vars = '(' + vars + ')'
+                    data['query'] = self.method + vars + self.body
                     self.processRow(data, id)
 
         self.makeRequestWithBody()
+        logging.getLogger(_LOGGER_NAME).info('end')
 
     def makeUrl(self, data, id):
         if not id:
@@ -689,20 +670,23 @@ class BodyFromTable(RestTools):
         return self.url + '/' + id
 
     def processRow(self, data, id):
+        logging.getLogger(_LOGGER_NAME).info('begin')
+        logging.getLogger(_LOGGER_NAME).info(json.dumps(data))
 
-        func = getattr(self, self.method)
+        func = getattr(self, "GraphqlQuery")
         url = self.makeUrl(data, id)
 
-        ct = g_headers.get("Content-Type")
+        #ct = g_headers.get("Content-Type")
 
-        if ct == "application/x-www-form-urlencoded":
-            data = urllib.parse.urlencode(data)
-        else:
-            data = json.dumps(data)
+        #if ct == "application/x-www-form-urlencoded":
+        #    data = urllib.parse.urlencode(data)
+        #else:
+        data = json.dumps(data)
+        logging.getLogger(_LOGGER_NAME).info(data)
 
         ret = func(url, data)
 
-        if self.method == "POST" and len(ret) > 0:
+        if len(ret) > 0:
             try:
                 res = json.loads(ret.decode('utf-8'))
 
@@ -710,51 +694,27 @@ class BodyFromTable(RestTools):
                     self.ids.append(res["_id"])
             except BaseException as e:
                 print("Get json from response \"%s\" error: %s" % (ret, e))
+        logging.getLogger(_LOGGER_NAME).info('end')
 
     def makeRequestWithBody(self):
         pass
 
-
-class Post(BodyFromTable):
+class GraphqlQuery(BodyFromTable):
     def __init__(self, url, count=1, query=None, args=None):
-        BodyFromTable.__init__(self, "POST", url, count, query, args)
+        global host_url
+        logging.getLogger(_LOGGER_NAME).info('GraphqlQuery(BodyFromTable)')
+        logging.getLogger(_LOGGER_NAME).info(host_url)
+        logging.getLogger(_LOGGER_NAME).info(json.dumps(url))
+        logging.getLogger(_LOGGER_NAME).info(json.dumps(query))
+        logging.getLogger(_LOGGER_NAME).info(json.dumps(args))
+        logging.getLogger(_LOGGER_NAME).info(json.dumps(count))
+        BodyFromTable.__init__(self, "query MyQuery", host_url, url, count, query, args)
 
-
-class Put(BodyFromTable):
+class GraphqlMutation(BodyFromTable):
     def __init__(self, url, count=1, query=None, args=None):
-        BodyFromTable.__init__(self, "PUT", url, count, query, args)
-
-
-class Patch(BodyFromTable):
-    def __init__(self, url):
-        BodyFromTable.__init__(self, "PATCH", url)
-
-
-class Delete(BodyFromTable):
-    def __init__(self, url):
-        BodyFromTable.__init__(self, "DELETE", url)
-
-
-class Bulk(BodyFromTable):
-    def __init__(self, url, method):
-        self.body = []
-        self.method = method
-        BodyFromTable.__init__(self, method, url)
-
-    def processRow(self, data, id):
-        data.update({'_id': id})
-        self.body += [data]
-
-    def makeRequestWithBody(self):
-        body = '\n'.join(map(lambda x: json.dumps(x), self.body))
-        print(getattr(self, self.method)(self.url, body))
-
-
-class BulkPost(Bulk):
-    def __init__(self, url):
-        Bulk.__init__(self, url, 'POST')
-
-
-class BulkPatch(Bulk):
-    def __init__(self, url):
-        Bulk.__init__(self, url, 'PATCH')
+        global host_url
+        logging.getLogger(_LOGGER_NAME).info('GraphqlQuery(BodyFromTable)')
+        logging.getLogger(_LOGGER_NAME).info(host_url)
+        logging.getLogger(_LOGGER_NAME).info(json.dumps(url))
+        logging.getLogger(_LOGGER_NAME).info(json.dumps(args))
+        BodyFromTable.__init__(self, "mutation MyMutation", host_url, url, count, query, args)
