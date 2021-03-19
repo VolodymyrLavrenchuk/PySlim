@@ -586,12 +586,12 @@ class BodyFromTable(RestTools):
         logging.getLogger(_LOGGER_NAME).info('begin')
         self.method = method
         self.url = url
-        self.ids = []
         self.count = count
         self.query = query
         self.args = args
         self.body = body
         self.prefix = prefix
+        self.rows = []
 
     def check_bool(self, val):
 
@@ -641,98 +641,80 @@ class BodyFromTable(RestTools):
         if type(rows) != tuple:
             data = {}
             data['query'] = self.prefix + self.body
-            self.processRow(data, "")
+            self.processRow(data)
         else:
             header = rows[0]
             for h in header:
-                if h == "_id?":
-                    setattr(self, "_id", lambda self=self: self.ids.pop(0))
-                else:
-                    bad_chars = [';', ':', '!', '*', ' ', '$']
-                    for i in bad_chars : 
-                        h = h.replace(i, '')
-                    attr = "set%s" % str.replace(h, h[0], h[0].upper(), 1)
-                    logging.getLogger(_LOGGER_NAME).info('attr:' + attr)
-                    setattr(self, attr, lambda x: x)
+                #setattr(self, "_id", lambda self=self: self.ids.pop(0))
+                bad_chars = [';', ':', '!', '*', ' ', '$']
+                for i in bad_chars : 
+                    h = h.replace(i, '')
+                attr = "set%s" % str.replace(h, h[0], h[0].upper(), 1)
+                logging.getLogger(_LOGGER_NAME).info('attr:' + attr)
+                setattr(self, attr, lambda x: x)
 
             for item in range(int(self.count)):
 
                 for row in rows[1:]:
                     data = {}
-                    id = ""
                     sep = ''
                     vars = ''
                     for idx in range(len(header)):
                         coll_name = header[idx]
                         logging.getLogger(_LOGGER_NAME).info(coll_name)
 
-                        if coll_name == '_id':
-                            id = row[idx]
-                        elif coll_name.startswith('#'):
+                        if coll_name.startswith('#'):
                             logging.getLogger(_LOGGER_NAME).info('skip:'+coll_name)
                         elif re.match('.*\?$', coll_name):
                             logging.getLogger(_LOGGER_NAME).info('skip:'+coll_name)
                             pass
-                        else:
-                            if not self.isUndefined(row[idx]):
-                                val = row[idx]
-                                logging.getLogger(_LOGGER_NAME).info(json.dumps(val))
-                                quot = ''
-                                if coll_name.endswith('String'):
-                                    quot='"'
-                                vars = vars + sep + coll_name + ' = ' + quot + str(self.check_hashtable(self.check_dict(self.check_bool(val)))) + quot
-                                sep = ', '
+                        elif not self.isUndefined(row[idx]):
+                            val = row[idx]
+                            logging.getLogger(_LOGGER_NAME).info(json.dumps(val))
+                            quot = ''
+                            if coll_name.endswith('String'):
+                                quot='"'
+                            vars = vars + sep + coll_name + ' = ' + quot + str(self.check_hashtable(self.check_dict(self.check_bool(val)))) + quot
+                            sep = ', '
                     if vars != '':
                         vars = '(' + vars + ')'
                     data['query'] = self.prefix + vars + self.body
-                    self.processRow(data, id)
+                    self.rows.append(data)
+                    #self.processRow(data)
 
         self.makeRequestWithBody()
         logging.getLogger(_LOGGER_NAME).info('end')
 
     def itemsId(self):
-        global lastRequestResult
-
-        o = json.loads(lastRequestResult)
-        logging.getLogger(_LOGGER_NAME).info('o' + str(o))
-        result = o
-        if type(o) == dict and "data" in o:
-            result = o['data']['listPatients']['items'][0]['id']
-            logging.getLogger(_LOGGER_NAME).info('items.id' + str(result))
+        result = ''
+        if self.graphqlResult() == '':
+            global lastRequestResult
+            o = json.loads(lastRequestResult)
+            logging.getLogger(_LOGGER_NAME).info('o' + str(o))
+            result = o
+            if type(o) == dict and "data" in o:
+                result = o['data']['listPatients']['items'][0]['id']
+                logging.getLogger(_LOGGER_NAME).info('items.id' + str(result))
         return str(result)
 
     def httpResult(self):
         global lastResponse
         return lastResponse.getcode()
 
-    def makeUrl(self, data, id):
-        if not id:
-            return self.url
-        return self.url + '/' + id
-
-    def processRow(self, data, id):
+    def processRow(self, data):
         logging.getLogger(_LOGGER_NAME).info('begin')
         logging.getLogger(_LOGGER_NAME).info(json.dumps(data))
 
         func = getattr(self, self.method)
-        url = self.makeUrl(data, id)
 
-        #ct = g_headers.get("Content-Type")
-
-        #if ct == "application/x-www-form-urlencoded":
-        #    data = urllib.parse.urlencode(data)
-        #else:
         data = json.dumps(data)
         logging.getLogger(_LOGGER_NAME).info(data)
 
-        ret = func(url, data)
+        ret = func(self.url, data)
 
         if len(ret) > 0:
             try:
                 res = json.loads(ret.decode('utf-8'))
-
-                if "_id" in res:
-                    self.ids.append(res["_id"])
             except BaseException as e:
                 print("Get json from response \"%s\" error: %s" % (ret, e))
         logging.getLogger(_LOGGER_NAME).info('end')
@@ -741,7 +723,24 @@ class BodyFromTable(RestTools):
         pass
 
     def execute(self):
-        pass
+        data = self.rows[0]
+        del self.rows[0]
+        self.processRow(data)
+
+    def graphqlResult(self):
+        result = ''
+        global lastResponse
+        if lastResponse.getcode() == 200:
+            global lastRequestResult
+            o = json.loads(lastRequestResult)
+            if type(o) == dict and "errors" in o:
+                o = o['errors']
+                logging.getLogger(_LOGGER_NAME).info(o)
+                o = map(lambda err: err['message'], o)
+                logging.getLogger(_LOGGER_NAME).info(o)
+                result = o = ' '.join(o)
+                logging.getLogger(_LOGGER_NAME).info(o)
+        return result
 
     def reset(self):
         pass
