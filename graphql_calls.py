@@ -708,6 +708,12 @@ class BodyFromTable(RestTools):
     def updatePatientId(self):
         return self._getField(['data','updatePatient','id'])
 
+    def deletePatientId(self):
+        return self._getField(['data','deletePatient','id'])
+
+    def getPatientId(self):
+        return self._getField(['data','getPatient','id'])
+
     def itemsId(self):
         result = ''
         if self.graphqlResult() == '':
