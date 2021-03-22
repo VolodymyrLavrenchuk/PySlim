@@ -705,6 +705,9 @@ class BodyFromTable(RestTools):
     def createPatientId(self):
         return self._getField(['data','createPatient','id'])
 
+    def updatePatientId(self):
+        return self._getField(['data','updatePatient','id'])
+
     def itemsId(self):
         result = ''
         if self.graphqlResult() == '':
@@ -750,7 +753,7 @@ class BodyFromTable(RestTools):
     def graphqlResult(self):
         result = ''
         global lastResponse
-        if lastResponse.getcode() == 200:
+        if lastResponse.getcode() in [200,400]:
             global lastRequestResult
             o = json.loads(lastRequestResult)
             if type(o) == dict and "errors" in o:
