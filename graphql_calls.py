@@ -646,6 +646,8 @@ class BodyFromTable(RestTools):
             header = rows[0]
             for h in header:
                 #setattr(self, "_id", lambda self=self: self.ids.pop(0))
+                if h.startswith('#') or h.endswith('?'):
+                    continue
                 bad_chars = [';', ':', '!', '*', ' ', '$']
                 for i in bad_chars : 
                     h = h.replace(i, '')
@@ -684,6 +686,24 @@ class BodyFromTable(RestTools):
 
         self.makeRequestWithBody()
         logging.getLogger(_LOGGER_NAME).info('end')
+
+    def _getField(self, parts):
+        result = ''
+        if self.graphqlResult() == '':
+            global lastRequestResult
+            o = json.loads(lastRequestResult)
+            logging.getLogger(_LOGGER_NAME).info('o:' + str(o))
+            result = o
+            for part in parts:
+                logging.getLogger(_LOGGER_NAME).info('part:' + part + ' type: ' + str(type(o)))
+                if type(o) == dict and part in o:
+                    o = o[part]
+                    logging.getLogger(_LOGGER_NAME).info('o:' + str(o))
+                    result = o
+        return str(result)
+
+    def createPatientId(self):
+        return self._getField(['data','createPatient','id'])
 
     def itemsId(self):
         result = ''
