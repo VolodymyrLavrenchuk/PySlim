@@ -470,16 +470,20 @@ class HttpResultAsTable(RestTools, Execute):
                 self.result = self.result[g_array_field]
 
     def get_dataset(self):
+        logging.getLogger(_LOGGER_NAME).info('get_dataset' + str(self.result))
 
         values = []
 
         if not type(self.result) == list:
+            logging.getLogger(_LOGGER_NAME).info('get_dataset: not list')
             self.result = [self.result]
 
         for row in self.result:
+            logging.getLogger(_LOGGER_NAME).info('get_dataset row: ' + str(row))
 
             item = {}
             for key in self.header:
+                logging.getLogger(_LOGGER_NAME).info('get_dataset key: ' + key)
 
                 if "_source" in row and key in row["_source"]:
                     item[key] = row["_source"][key]
@@ -510,6 +514,7 @@ class HttpResultAsTable(RestTools, Execute):
 
             values.append(item)
 
+        logging.getLogger(_LOGGER_NAME).info('get_dataset self.header' + str(self.header))
         return values, self.header
 
     def table(self, table):
@@ -525,19 +530,19 @@ class HttpResultAsTable(RestTools, Execute):
             else:
                 setattr(self, "set%s" % str.replace(h, h[0], h[0].upper(), 1), lambda x: x)
 
-
 class LastResultAsTable(HttpResultAsTable):
     def __init__(self):
         global lastRequestResult
 
         o = json.loads(lastRequestResult)
+        if type(o) == dict and "data" in o:
+            o = o['data']
+            if type(o) == dict and "listPatients" in o:
+                o = o['listPatients']
+                #if type(o) == dict and "items" in o:
+                 #   o = o['items']
         self.result = o
-        if type(o) == dict and "hits" in o:
-            self.result = o['hits']['hits']
-        elif type(o) == dict and "docs" in o:
-            self.result = o['docs']
-        elif type(o) == dict and "data" in o:
-            self.result = o['data']['listPatients']['items']
+        logging.getLogger(_LOGGER_NAME).info('LastResultAsTable_init:' + str(self.result))
         print('OUTPUT: ', self.result)
 
 
@@ -695,8 +700,12 @@ class BodyFromTable(RestTools):
             logging.getLogger(_LOGGER_NAME).info('o:' + str(o))
             result = o
             for part in parts:
-                logging.getLogger(_LOGGER_NAME).info('part:' + part + ' type: ' + str(type(o)))
+                logging.getLogger(_LOGGER_NAME).info('part:' + str(part) + ' type: ' + str(type(o)))
                 if type(o) == dict and part in o:
+                    o = o[part]
+                    logging.getLogger(_LOGGER_NAME).info('o:' + str(o))
+                    result = o
+                elif type(o) == list:
                     o = o[part]
                     logging.getLogger(_LOGGER_NAME).info('o:' + str(o))
                     result = o
@@ -707,6 +716,21 @@ class BodyFromTable(RestTools):
 
     def updatePatientId(self):
         return self._getField(['data','updatePatient','id'])
+
+    def deletePatientId(self):
+        return self._getField(['data','deletePatient','id'])
+
+    def getPatientId(self):
+        return self._getField(['data','getPatient','id'])
+
+    def listPatientsCount(self):
+        return self._getField(['data','listPatients','count'])
+
+    def listPatientsNextToken(self):
+        return self._getField(['data','listPatients','nextToken'])
+
+    def listPatientsItemsId(self):
+        return self._getField(['data','listPatients','items',0,'id'])
 
     def itemsId(self):
         result = ''
