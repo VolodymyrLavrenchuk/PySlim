@@ -732,6 +732,22 @@ class BodyFromTable(RestTools):
     def listPatientsItemsId(self):
         return self._getField(['data','listPatients','items',0,'id'])
 
+    def createMeasurementId(self):
+        return self._getField(['data','createMeasurement','id'])
+
+    def getMeasurementId(self):
+        return self._getField(['data','getMeasurement','id'])
+
+    def deleteMeasurementId(self):
+        return self._getField(['data','deleteMeasurement','id'])
+
+    def listMeasurementsCount(self):
+        return self._getField(['data','listMeasurements','count'])
+
+    def listMeasurementsNextToken(self):
+        return self._getField(['data','listMeasurements','nextToken'])
+
+
     def itemsId(self):
         result = ''
         if self.graphqlResult() == '':
