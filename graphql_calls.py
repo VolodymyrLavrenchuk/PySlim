@@ -32,7 +32,7 @@ g_headers = dict()
 g_array_field = "hits"
 
 _LOGGER_NAME = 'PySlim'
-#logging.getLogger(_LOGGER_NAME).setLevel(logging.DEBUG)
+logging.getLogger(_LOGGER_NAME).setLevel(logging.DEBUG)
 
 def make_request(func, req):
     logging.getLogger(_LOGGER_NAME).info('begin')
@@ -700,16 +700,35 @@ class BodyFromTable(RestTools):
         return self._getField(self.headers[name])
 
     def _add_getattr(self, header):
+            print('header: ' + header)
             header = header[:-1]
+            print('header: ' + header)
             sep = '.'
             if ' ' in header:
                 sep = ' '
-            items = header.split(sep)
+            items1 = header.split(sep)
+            items = []
+            for item in items1:
+                fi = item.find('[',1,-2)
+                if item.endswith(']') and fi != -1:
+                    items.append(item[0:fi])
+                    items.append(item[fi:])
+                else:
+                    items.append(item)
+
+            print('items: ' + str(items))
             attr = items[0]
             for i in items[1:]:
                 attr += str.replace(i, i[0], i[0].upper(), 1)
+                print('attr: ' + attr)
+            for idx in range(len(items)):
+                item = items[idx]
+                if (item.startswith('[') and item.endswith(']')):
+                    items[idx] = item[1:-1]
             items.insert(0, 'data')
+            print('items: ' + str(items))
             if attr in ['graphqlResult', 'httpResult']:
+                print('skip: ' + attr)
                 return
             self.headers[attr] = items
             setattr(self, attr, lambda self=self: self._getx(attr))
@@ -725,12 +744,14 @@ class BodyFromTable(RestTools):
                 logging.getLogger(_LOGGER_NAME).info('part:' + str(part) + ' type: ' + str(type(o)))
                 if type(o) == dict and part in o:
                     if str.isdigit(part):
+                        print('------------------ to digit' )
                         part = int(part)
                     o = o[part]
                     logging.getLogger(_LOGGER_NAME).info('o: ' + str(o))
                     result = o
                 elif type(o) == list:
-                    if str.isdigit(part):
+                    if str.isdigit(part) or (part[0] == '-' and str.isdigit(part[1:])):
+                        print('------------------ to digit' )
                         part = int(part)
                     o = o[part]
                     logging.getLogger(_LOGGER_NAME).info('o: ' + str(o))
