@@ -32,7 +32,7 @@ g_headers = dict()
 g_array_field = "hits"
 
 _LOGGER_NAME = 'PySlim'
-logging.getLogger(_LOGGER_NAME).setLevel(logging.DEBUG)
+#logging.getLogger(_LOGGER_NAME).setLevel(logging.DEBUG)
 
 def make_request(func, req):
     logging.getLogger(_LOGGER_NAME).info('begin')
@@ -597,6 +597,7 @@ class BodyFromTable(RestTools):
         self.body = body
         self.prefix = prefix
         self.rows = []
+        self.headers = {}
 
     def check_bool(self, val):
 
@@ -650,8 +651,11 @@ class BodyFromTable(RestTools):
         else:
             header = rows[0]
             for h in header:
-                #setattr(self, "_id", lambda self=self: self.ids.pop(0))
-                if h.startswith('#') or h.endswith('?'):
+                h = h.strip()
+                if h.startswith('#'):
+                    continue
+                if h.endswith('?'):
+                    self._add_getattr(h)
                     continue
                 bad_chars = [';', ':', '!', '*', ' ', '$']
                 for i in bad_chars : 
@@ -692,61 +696,48 @@ class BodyFromTable(RestTools):
         self.makeRequestWithBody()
         logging.getLogger(_LOGGER_NAME).info('end')
 
+    def _getx(self, name):
+        return self._getField(self.headers[name])
+
+    def _add_getattr(self, header):
+            header = header[:-1]
+            sep = '.'
+            if ' ' in header:
+                sep = ' '
+            items = header.split(sep)
+            attr = items[0]
+            for i in items[1:]:
+                attr += str.replace(i, i[0], i[0].upper(), 1)
+            items.insert(0, 'data')
+            if attr in ['graphqlResult', 'httpResult']:
+                return
+            self.headers[attr] = items
+            setattr(self, attr, lambda self=self: self._getx(attr))
+
     def _getField(self, parts):
         result = ''
         if self.graphqlResult() == '':
             global lastRequestResult
             o = json.loads(lastRequestResult)
-            logging.getLogger(_LOGGER_NAME).info('o:' + str(o))
+            logging.getLogger(_LOGGER_NAME).info('o: ' + str(o))
             result = o
             for part in parts:
                 logging.getLogger(_LOGGER_NAME).info('part:' + str(part) + ' type: ' + str(type(o)))
                 if type(o) == dict and part in o:
+                    if str.isdigit(part):
+                        part = int(part)
                     o = o[part]
-                    logging.getLogger(_LOGGER_NAME).info('o:' + str(o))
+                    logging.getLogger(_LOGGER_NAME).info('o: ' + str(o))
                     result = o
                 elif type(o) == list:
+                    if str.isdigit(part):
+                        part = int(part)
                     o = o[part]
-                    logging.getLogger(_LOGGER_NAME).info('o:' + str(o))
+                    logging.getLogger(_LOGGER_NAME).info('o: ' + str(o))
                     result = o
+                else:
+                    logging.getLogger(_LOGGER_NAME).info('o: ' + str(o))
         return str(result)
-
-    def createPatientId(self):
-        return self._getField(['data','createPatient','id'])
-
-    def updatePatientId(self):
-        return self._getField(['data','updatePatient','id'])
-
-    def deletePatientId(self):
-        return self._getField(['data','deletePatient','id'])
-
-    def getPatientId(self):
-        return self._getField(['data','getPatient','id'])
-
-    def listPatientsCount(self):
-        return self._getField(['data','listPatients','count'])
-
-    def listPatientsNextToken(self):
-        return self._getField(['data','listPatients','nextToken'])
-
-    def listPatientsItemsId(self):
-        return self._getField(['data','listPatients','items',0,'id'])
-
-    def createMeasurementId(self):
-        return self._getField(['data','createMeasurement','id'])
-
-    def getMeasurementId(self):
-        return self._getField(['data','getMeasurement','id'])
-
-    def deleteMeasurementId(self):
-        return self._getField(['data','deleteMeasurement','id'])
-
-    def listMeasurementsCount(self):
-        return self._getField(['data','listMeasurements','count'])
-
-    def listMeasurementsNextToken(self):
-        return self._getField(['data','listMeasurements','nextToken'])
-
 
     def itemsId(self):
         result = ''
@@ -760,11 +751,7 @@ class BodyFromTable(RestTools):
                 logging.getLogger(_LOGGER_NAME).info('items.id' + str(result))
         return str(result)
 
-    def httpResult(self):
-        global lastResponse
-        return lastResponse.getcode()
-
-    def processRow(self, data):
+    def _processRow(self, data):
         logging.getLogger(_LOGGER_NAME).info('begin')
         logging.getLogger(_LOGGER_NAME).info(json.dumps(data))
 
@@ -785,10 +772,9 @@ class BodyFromTable(RestTools):
     def makeRequestWithBody(self):
         pass
 
-    def execute(self):
-        data = self.rows[0]
-        del self.rows[0]
-        self.processRow(data)
+    def httpResult(self):
+        global lastResponse
+        return lastResponse.getcode()
 
     def graphqlResult(self):
         result = ''
@@ -804,6 +790,11 @@ class BodyFromTable(RestTools):
                 result = o = ' '.join(o)
                 logging.getLogger(_LOGGER_NAME).info(o)
         return result
+
+    def execute(self):
+        data = self.rows[0]
+        del self.rows[0]
+        self._processRow(data)
 
     def reset(self):
         pass
