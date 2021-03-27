@@ -596,8 +596,10 @@ class BodyFromTable(RestTools):
         self.args = args
         self.body = body
         self.prefix = prefix
+        self.get_headers = {}
+        self.set_headers = {}
         self.rows = []
-        self.headers = {}
+        self.row = {}
 
     def check_bool(self, val):
 
@@ -657,12 +659,7 @@ class BodyFromTable(RestTools):
                 if h.endswith('?'):
                     self._add_getattr(h)
                     continue
-                bad_chars = [';', ':', '!', '*', ' ', '$']
-                for i in bad_chars : 
-                    h = h.replace(i, '')
-                attr = "set%s" % str.replace(h, h[0], h[0].upper(), 1)
-                logging.getLogger(_LOGGER_NAME).info('attr:' + attr)
-                setattr(self, attr, lambda x: x)
+                self._add_setattr(h)
 
             for item in range(int(self.count)):
 
@@ -696,42 +693,76 @@ class BodyFromTable(RestTools):
         self.makeRequestWithBody()
         logging.getLogger(_LOGGER_NAME).info('end')
 
+    def _prepare_data(self):
+        sep = ''
+        vars = ''
+        for row in self.row.keys():
+            coll_name = self.set_headers[row]
+            logging.getLogger(_LOGGER_NAME).info(f'_prepare_data: coll_name: {coll_name}')
+            val = self.row[row]
+            logging.getLogger(_LOGGER_NAME).info(json.dumps(f'_prepare_data: val: {val}'))
+            quot = ''
+            if coll_name.endswith('String'):
+                quot='"'
+            vars = vars + sep + coll_name + ' = ' + quot + str(self.check_hashtable(self.check_dict(self.check_bool(val)))) + quot
+            sep = ', '
+        if vars != '':
+            vars = '(' + vars + ')'
+        logging.getLogger(_LOGGER_NAME).info(json.dumps(f'_prepare_data: vars: {vars}'))
+        data = {}
+        data['query'] = self.prefix + vars + self.body
+        return data
+
+    def _set_data(self, name, value):
+        logging.getLogger(_LOGGER_NAME).info(f'_set_data({name}): {value}')
+        self.row[name] = value
+
     def _getx(self, name):
-        return self._getField(self.headers[name])
+        return self._getField(self.get_headers[name])
 
     def _add_getattr(self, header):
-            print('header: ' + header)
-            header = header[:-1]
-            print('header: ' + header)
-            sep = '.'
-            if ' ' in header:
-                sep = ' '
-            items1 = header.split(sep)
-            items = []
-            for item in items1:
-                fi = item.find('[',1,-2)
-                if item.endswith(']') and fi != -1:
-                    items.append(item[0:fi])
-                    items.append(item[fi:])
-                else:
-                    items.append(item)
+        print('header: ' + header)
+        header = header[:-1]
+        print('header: ' + header)
+        sep = '.'
+        if ' ' in header:
+            sep = ' '
+        items1 = header.split(sep)
+        items = []
+        for item in items1:
+            fi = item.find('[',1,-2)
+            if item.endswith(']') and fi != -1:
+                items.append(item[0:fi])
+                items.append(item[fi:])
+            else:
+                items.append(item)
 
-            print('items: ' + str(items))
-            attr = items[0]
-            for i in items[1:]:
-                attr += str.replace(i, i[0], i[0].upper(), 1)
-                print('attr: ' + attr)
-            for idx in range(len(items)):
-                item = items[idx]
-                if (item.startswith('[') and item.endswith(']')):
-                    items[idx] = item[1:-1]
-            items.insert(0, 'data')
-            print('items: ' + str(items))
-            if attr in ['graphqlResult', 'httpResult']:
-                print('skip: ' + attr)
-                return
-            self.headers[attr] = items
-            setattr(self, attr, lambda self=self: self._getx(attr))
+        print('items: ' + str(items))
+        attr = items[0]
+        for i in items[1:]:
+            attr += str.replace(i, i[0], i[0].upper(), 1)
+            print('attr: ' + attr)
+        for idx in range(len(items)):
+            item = items[idx]
+            if (item.startswith('[') and item.endswith(']')):
+                items[idx] = item[1:-1]
+        items.insert(0, 'data')
+        print('items: ' + str(items))
+        if attr in ['graphqlResult', 'httpResult']:
+            print('skip: ' + attr)
+            return
+        self.get_headers[attr] = items
+        setattr(self, attr, lambda self=self: self._getx(attr))
+
+    def _add_setattr(self, header):
+        h = header
+        for i in [';', ':', '!', '*', ' ', '$'] : 
+            h = h.replace(i, '')
+        attr = "set%s" % str.replace(h, h[0], h[0].upper(), 1)
+        logging.getLogger(_LOGGER_NAME).info('attr:' + attr)
+        #setattr(self, attr, lambda x: x)
+        setattr(self, attr, lambda value: self._set_data(attr, value))
+        self.set_headers[attr] = header
 
     def _getField(self, parts):
         result = ''
@@ -758,18 +789,6 @@ class BodyFromTable(RestTools):
                     result = o
                 else:
                     logging.getLogger(_LOGGER_NAME).info('o: ' + str(o))
-        return str(result)
-
-    def itemsId(self):
-        result = ''
-        if self.graphqlResult() == '':
-            global lastRequestResult
-            o = json.loads(lastRequestResult)
-            logging.getLogger(_LOGGER_NAME).info('o' + str(o))
-            result = o
-            if type(o) == dict and "data" in o:
-                result = o['data']['listPatients']['items'][0]['id']
-                logging.getLogger(_LOGGER_NAME).info('items.id' + str(result))
         return str(result)
 
     def _processRow(self, data):
@@ -813,12 +832,13 @@ class BodyFromTable(RestTools):
         return result
 
     def execute(self):
-        data = self.rows[0]
-        del self.rows[0]
+        #data = self.rows[0]
+        #del self.rows[0]
+        data = self._prepare_data()
         self._processRow(data)
 
     def reset(self):
-        pass
+        self.row = {}
 
     def beginTable(self):
         pass
