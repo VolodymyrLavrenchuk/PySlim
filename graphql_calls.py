@@ -596,7 +596,10 @@ class BodyFromTable(RestTools):
         self.args = args
         self.body = body
         self.prefix = prefix
+        self.get_headers = {}
+        self.set_headers = {}
         self.rows = []
+        self.row = {}
 
     def check_bool(self, val):
 
@@ -650,15 +653,13 @@ class BodyFromTable(RestTools):
         else:
             header = rows[0]
             for h in header:
-                #setattr(self, "_id", lambda self=self: self.ids.pop(0))
-                if h.startswith('#') or h.endswith('?'):
+                h = h.strip()
+                if h.startswith('#'):
                     continue
-                bad_chars = [';', ':', '!', '*', ' ', '$']
-                for i in bad_chars : 
-                    h = h.replace(i, '')
-                attr = "set%s" % str.replace(h, h[0], h[0].upper(), 1)
-                logging.getLogger(_LOGGER_NAME).info('attr:' + attr)
-                setattr(self, attr, lambda x: x)
+                if h.endswith('?'):
+                    self._add_getattr(h)
+                    continue
+                self._add_setattr(h)
 
             for item in range(int(self.count)):
 
@@ -692,79 +693,105 @@ class BodyFromTable(RestTools):
         self.makeRequestWithBody()
         logging.getLogger(_LOGGER_NAME).info('end')
 
+    def _prepare_data(self):
+        sep = ''
+        vars = ''
+        for row in self.row.keys():
+            coll_name = self.set_headers[row]
+            logging.getLogger(_LOGGER_NAME).info(f'_prepare_data: coll_name: {coll_name}')
+            val = self.row[row]
+            logging.getLogger(_LOGGER_NAME).info(json.dumps(f'_prepare_data: val: {val}'))
+            quot = ''
+            if coll_name.endswith('String'):
+                quot='"'
+            vars = vars + sep + coll_name + ' = ' + quot + str(self.check_hashtable(self.check_dict(self.check_bool(val)))) + quot
+            sep = ', '
+        if vars != '':
+            vars = '(' + vars + ')'
+        logging.getLogger(_LOGGER_NAME).info(json.dumps(f'_prepare_data: vars: {vars}'))
+        data = {}
+        data['query'] = self.prefix + vars + self.body
+        return data
+
+    def _set_data(self, name, value):
+        logging.getLogger(_LOGGER_NAME).info(f'_set_data({name}): {value}')
+        self.row[name] = value
+
+    def _getx(self, name):
+        return self._getField(self.get_headers[name])
+
+    def _add_getattr(self, header):
+        print('header: ' + header)
+        header = header[:-1]
+        print('header: ' + header)
+        sep = '.'
+        if ' ' in header:
+            sep = ' '
+        items1 = header.split(sep)
+        items = []
+        for item in items1:
+            fi = item.find('[',1,-2)
+            if item.endswith(']') and fi != -1:
+                items.append(item[0:fi])
+                items.append(item[fi:])
+            else:
+                items.append(item)
+
+        print('items: ' + str(items))
+        attr = items[0]
+        for i in items[1:]:
+            attr += str.replace(i, i[0], i[0].upper(), 1)
+            print('attr: ' + attr)
+        for idx in range(len(items)):
+            item = items[idx]
+            if (item.startswith('[') and item.endswith(']')):
+                items[idx] = item[1:-1]
+        items.insert(0, 'data')
+        print('items: ' + str(items))
+        if attr in ['graphqlResult', 'httpResult']:
+            print('skip: ' + attr)
+            return
+        self.get_headers[attr] = items
+        setattr(self, attr, lambda self=self: self._getx(attr))
+
+    def _add_setattr(self, header):
+        h = header
+        for i in [';', ':', '!', '*', ' ', '$'] : 
+            h = h.replace(i, '')
+        attr = "set%s" % str.replace(h, h[0], h[0].upper(), 1)
+        logging.getLogger(_LOGGER_NAME).info('attr:' + attr)
+        #setattr(self, attr, lambda x: x)
+        setattr(self, attr, lambda value: self._set_data(attr, value))
+        self.set_headers[attr] = header
+
     def _getField(self, parts):
         result = ''
         if self.graphqlResult() == '':
             global lastRequestResult
             o = json.loads(lastRequestResult)
-            logging.getLogger(_LOGGER_NAME).info('o:' + str(o))
+            logging.getLogger(_LOGGER_NAME).info('o: ' + str(o))
             result = o
             for part in parts:
                 logging.getLogger(_LOGGER_NAME).info('part:' + str(part) + ' type: ' + str(type(o)))
                 if type(o) == dict and part in o:
+                    if str.isdigit(part):
+                        print('------------------ to digit' )
+                        part = int(part)
                     o = o[part]
-                    logging.getLogger(_LOGGER_NAME).info('o:' + str(o))
+                    logging.getLogger(_LOGGER_NAME).info('o: ' + str(o))
                     result = o
                 elif type(o) == list:
+                    if str.isdigit(part) or (part[0] == '-' and str.isdigit(part[1:])):
+                        print('------------------ to digit' )
+                        part = int(part)
                     o = o[part]
-                    logging.getLogger(_LOGGER_NAME).info('o:' + str(o))
+                    logging.getLogger(_LOGGER_NAME).info('o: ' + str(o))
                     result = o
+                else:
+                    logging.getLogger(_LOGGER_NAME).info('o: ' + str(o))
         return str(result)
 
-    def createPatientId(self):
-        return self._getField(['data','createPatient','id'])
-
-    def updatePatientId(self):
-        return self._getField(['data','updatePatient','id'])
-
-    def deletePatientId(self):
-        return self._getField(['data','deletePatient','id'])
-
-    def getPatientId(self):
-        return self._getField(['data','getPatient','id'])
-
-    def listPatientsCount(self):
-        return self._getField(['data','listPatients','count'])
-
-    def listPatientsNextToken(self):
-        return self._getField(['data','listPatients','nextToken'])
-
-    def listPatientsItemsId(self):
-        return self._getField(['data','listPatients','items',0,'id'])
-
-    def createMeasurementId(self):
-        return self._getField(['data','createMeasurement','id'])
-
-    def getMeasurementId(self):
-        return self._getField(['data','getMeasurement','id'])
-
-    def deleteMeasurementId(self):
-        return self._getField(['data','deleteMeasurement','id'])
-
-    def listMeasurementsCount(self):
-        return self._getField(['data','listMeasurements','count'])
-
-    def listMeasurementsNextToken(self):
-        return self._getField(['data','listMeasurements','nextToken'])
-
-
-    def itemsId(self):
-        result = ''
-        if self.graphqlResult() == '':
-            global lastRequestResult
-            o = json.loads(lastRequestResult)
-            logging.getLogger(_LOGGER_NAME).info('o' + str(o))
-            result = o
-            if type(o) == dict and "data" in o:
-                result = o['data']['listPatients']['items'][0]['id']
-                logging.getLogger(_LOGGER_NAME).info('items.id' + str(result))
-        return str(result)
-
-    def httpResult(self):
-        global lastResponse
-        return lastResponse.getcode()
-
-    def processRow(self, data):
+    def _processRow(self, data):
         logging.getLogger(_LOGGER_NAME).info('begin')
         logging.getLogger(_LOGGER_NAME).info(json.dumps(data))
 
@@ -785,10 +812,9 @@ class BodyFromTable(RestTools):
     def makeRequestWithBody(self):
         pass
 
-    def execute(self):
-        data = self.rows[0]
-        del self.rows[0]
-        self.processRow(data)
+    def httpResult(self):
+        global lastResponse
+        return lastResponse.getcode()
 
     def graphqlResult(self):
         result = ''
@@ -805,8 +831,14 @@ class BodyFromTable(RestTools):
                 logging.getLogger(_LOGGER_NAME).info(o)
         return result
 
+    def execute(self):
+        #data = self.rows[0]
+        #del self.rows[0]
+        data = self._prepare_data()
+        self._processRow(data)
+
     def reset(self):
-        pass
+        self.row = {}
 
     def beginTable(self):
         pass
