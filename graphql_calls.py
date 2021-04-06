@@ -702,7 +702,7 @@ class BodyFromTable(RestTools):
             val = self.row[row]
             logging.getLogger(_LOGGER_NAME).info(json.dumps(f'_prepare_data: val: {val}'))
             quot = ''
-            if coll_name.endswith('String'):
+            if coll_name.endswith('String') or coll_name.endswith('[String]') or coll_name.endswith('[String!]'):
                 quot='"'
             vars = vars + sep + coll_name + ' = ' + quot + str(self.check_hashtable(self.check_dict(self.check_bool(val)))) + quot
             sep = ', '
@@ -756,7 +756,7 @@ class BodyFromTable(RestTools):
 
     def _add_setattr(self, header):
         h = header
-        for i in [';', ':', '!', '*', ' ', '$'] : 
+        for i in [';', ':', '!', '*', ' ', '$', '[', ']'] : 
             h = h.replace(i, '')
         attr = "set%s" % str.replace(h, h[0], h[0].upper(), 1)
         logging.getLogger(_LOGGER_NAME).info('attr:' + attr)
