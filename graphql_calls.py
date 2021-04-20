@@ -757,6 +757,9 @@ class BodyFromTable(RestTools):
     def makeRequestWithBody(self):
         pass
 
+    def execute(self):
+        pass
+
     def reset(self):
         pass
 
