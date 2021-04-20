@@ -134,6 +134,23 @@ class HttpCallBase(ABC):
         logging.getLogger(_LOGGER_NAME).info('end')
         return ret
 
+    def GET(self, url, headers={}, args=None):
+
+        if type(headers) == str:
+            headers = json.loads(headers) if len(headers) > 0 else {}
+
+        rqHeaders  = {}
+        rqHeaders.update(g_headers)
+        rqHeaders.update(headers)
+        rqHeaders = {k: v for k, v in rqHeaders.items() if v != ""}
+
+        if args:
+            url = url + urllib.parse.quote(args, '=&')
+
+        req = self.request(url, None, rqHeaders)
+
+        return self.read(req)
+
     def ArrayField(self, value):
 
         global g_array_field
@@ -146,6 +163,11 @@ class HttpCallBase(ABC):
 
         print("Headers:")
         print(g_headers)
+
+    def ClearHeader(self):
+
+        global g_headers
+        g_headers = dict()
 
 class HttpCall(HttpCallBase):
     def make_call(self, req):
@@ -178,13 +200,13 @@ class RestTools:
         return json.dumps(self.get_json(url), sort_keys=True)
 
     def getRequest(self, url, data=None, headers={}):
-        logging.getLogger(_LOGGER_NAME).info('begin')
+        logging.getLogger(_LOGGER_NAME).info('getRequest begin')
         headers.update(g_headers)
         print('getRequest:' + data)
         if data != None and hasattr(data, 'encode'):
             data = data.encode('utf-8')
         #print('getRequest:' + data)
-        logging.getLogger(_LOGGER_NAME).info('end')
+        logging.getLogger(_LOGGER_NAME).info('getRequest end')
         return self.httpClient.request(self.get_full_url(url), data, headers)
 
     def get_str(self, url, args=None):
@@ -369,28 +391,60 @@ class RestTools:
 
         return line.replace('\n', '\\n')
 
+    def GET(self, url, headers={}, args=None):
+        return self.httpClient.GET(url, headers, args)
+
     def ArrayField(self, value):
         self.httpClient.ArrayField(value)
 
-    def GraphqlQuery(self, url, data="", headers=""):
+    def POST(self, url, data="", headers={}):
+        logging.getLogger(_LOGGER_NAME).info('POST begin')
+        logging.getLogger(_LOGGER_NAME).info('data= ' + data)
+        if(isinstance(data , str)):
+            data = data.replace('\n', '\r\n')
+        logging.getLogger(_LOGGER_NAME).info(data)
+        req = self.getRequest(url, data, headers if headers else self.http_headers)
+        logging.getLogger(_LOGGER_NAME).info('POST end')
+
+        return self.httpClient.read(req)
+
+    def PUT(self, url, data=""):
+        req = self.getRequest(url, data, self.http_headers)
+        req.get_method = lambda: 'PUT'
+
+        return self.httpClient.read(req)
+
+    def DELETE(self, url, data=""):
+        req = self.getRequest(url, data, self.http_headers)
+        req.get_method = lambda: 'DELETE'
+
+        return self.httpClient.read(req)
+
+    def PATCH(self, url, data=""):
+        req = self.getRequest(url, data, self.http_headers)
+        req.get_method = lambda: 'PATCH'
+
+        return self.httpClient.read(req)
+
+    def GraphqlQuery(self, url, data="", headers={}):
         logging.getLogger(_LOGGER_NAME).info('begin')
 
         print('data:' + data)
         if(isinstance(data , str)):
             data = data.replace('\n', '\r\n')
         logging.getLogger(_LOGGER_NAME).info(data)
-        req = self.getRequest(url, data, json.loads(headers) if headers else self.http_headers)
+        req = self.getRequest(url, data, headers if headers else self.http_headers)
         logging.getLogger(_LOGGER_NAME).info('end')
         return self.httpClient.read(req)
 
-    def GraphqlMutation(self, url, data="", headers=""):
+    def GraphqlMutation(self, url, data="", headers={}):
         logging.getLogger(_LOGGER_NAME).info('begin')
 
         print('data:' + data)
         if(isinstance(data , str)):
             data = data.replace('\n', '\r\n')
         logging.getLogger(_LOGGER_NAME).info(data)
-        req = self.getRequest(url, data, json.loads(headers) if headers else self.http_headers)
+        req = self.getRequest(url, data, headers if headers else self.http_headers)
         logging.getLogger(_LOGGER_NAME).info('end')
         return self.httpClient.read(req)
 
@@ -587,6 +641,179 @@ class LastResponseAsTable(HttpResultAsTable):
 
 
 class BodyFromTable(RestTools):
+    def __init__(self, method, url, count=1, query=None, args=None):
+        self.method = method
+        self.url = url
+        self.ids = []
+        self.count = count
+        self.query = query
+        self.args = args
+
+    def check_bool(self, val):
+
+        if isinstance(val, str) and val.lower() == "false":
+            return False
+
+        if isinstance(val, str) and val.lower() == "true":
+            return True
+
+        return val
+
+    def check_dict(self, val):
+
+        val = self.parse_json(val)
+
+        if isinstance(val, str):
+            if val.startswith("["):
+                return val[1:len(val) - 1].split(",")
+            if val.startswith("{"):
+                return ast.literal_eval(val)
+
+        return val
+
+    @convert_arg(to_type=dict)
+    def convert_from_hashtable(self, data):
+        return data
+
+    def check_hashtable(self, val):
+        if isinstance(val, str) and val.find("hash_table") != -1:
+            return self.convert_from_hashtable(re.sub('\t|\n|\r', '', val))
+        else:
+            return val
+
+    def parse_json(self, val):
+        try:
+            return json.loads(val)
+        except BaseException as e:
+            return val
+
+    def isUndefined(self, val):
+
+        return val == "undefined"
+
+    def table(self, rows):
+
+        if type(rows) != tuple:
+            self.processRow({}, "")
+        else:
+            header = rows[0]
+            for h in header:
+                if h == "_id?":
+                    setattr(self, "_id", lambda self=self: self.ids.pop(0))
+                else:
+                    setattr(self, "set%s" % str.replace(h, h[0], h[0].upper(), 1), lambda x: x)
+
+            for item in range(int(self.count)):
+
+                for row in rows[1:]:
+                    data = {}
+                    id = ""
+                    for idx in range(len(header)):
+                        coll_name = header[idx]
+
+                        if coll_name == '_id':
+                            id = row[idx]
+                        elif re.match('.*\?$', coll_name):
+                            pass
+                        else:
+                            if not self.isUndefined(row[idx]):
+                                val = row[idx]
+                                data[header[idx]] = self.check_hashtable(self.check_dict(self.check_bool(val)))
+
+                    self.processRow(data, id)
+
+        self.makeRequestWithBody()
+
+    def makeUrl(self, data, id):
+        if not id:
+            return self.url
+        return self.url + '/' + id
+
+    def processRow(self, data, id):
+
+        global g_headers
+        func = getattr(self, self.method)
+        url = self.makeUrl(data, id)
+
+        ct = g_headers.get("Content-Type")
+
+        if ct == "application/x-www-form-urlencoded":
+            data = urllib.parse.urlencode(data)
+        else:
+            data = json.dumps(data)
+            logging.getLogger(_LOGGER_NAME).info('data: ' + str(data))
+
+        ret = func(url, data, g_headers)
+
+        if self.method == "POST" and len(ret) > 0:
+            try:
+                res = json.loads(ret.decode('utf-8'))
+
+                if "_id" in res:
+                    self.ids.append(res["_id"])
+            except BaseException as e:
+                print("Get json from response \"%s\" error: %s" % (ret, e))
+
+    def makeRequestWithBody(self):
+        pass
+
+    def execute(self):
+        pass
+
+    def reset(self):
+        pass
+
+    def beginTable(self):
+        pass
+
+    def endTable(self):
+        pass
+
+class Post(BodyFromTable):
+    def __init__(self, url, count=1, query=None, args=None):
+        BodyFromTable.__init__(self, "POST", url, count, query, args)
+
+
+class Put(BodyFromTable):
+    def __init__(self, url, count=1, query=None, args=None):
+        BodyFromTable.__init__(self, "PUT", url, count, query, args)
+
+
+class Patch(BodyFromTable):
+    def __init__(self, url):
+        BodyFromTable.__init__(self, "PATCH", url)
+
+
+class Delete(BodyFromTable):
+    def __init__(self, url):
+        BodyFromTable.__init__(self, "DELETE", url)
+
+
+class Bulk(BodyFromTable):
+    def __init__(self, url, method):
+        self.body = []
+        self.method = method
+        BodyFromTable.__init__(self, method, url)
+
+    def processRow(self, data, id):
+        data.update({'_id': id})
+        self.body += [data]
+
+    def makeRequestWithBody(self):
+        body = '\n'.join(map(lambda x: json.dumps(x), self.body))
+        print(getattr(self, self.method)(self.url, body))
+
+
+class BulkPost(Bulk):
+    def __init__(self, url):
+        Bulk.__init__(self, url, 'POST')
+
+
+class BulkPatch(Bulk):
+    def __init__(self, url):
+        Bulk.__init__(self, url, 'PATCH')
+
+class GraphqlBodyFromTable(RestTools):
     def __init__(self, method, url, count=1, query=None, args=None, body=None, prefix=None):
         logging.getLogger(_LOGGER_NAME).info('begin')
         self.method = method
@@ -702,6 +929,8 @@ class BodyFromTable(RestTools):
             val = self.row[row]
             logging.getLogger(_LOGGER_NAME).info(json.dumps(f'_prepare_data: val: {val}'))
             quot = ''
+            if coll_name.endswith('ID') and val == '':
+                val = -1
             if coll_name.endswith('String') or coll_name.endswith('[String]') or coll_name.endswith('[String!]'):
                 quot='"'
             vars = vars + sep + coll_name + ' = ' + quot + str(self.check_hashtable(self.check_dict(self.check_bool(val)))) + quot
@@ -792,6 +1021,7 @@ class BodyFromTable(RestTools):
         return str(result)
 
     def _processRow(self, data):
+        global g_headers
         logging.getLogger(_LOGGER_NAME).info('begin')
         logging.getLogger(_LOGGER_NAME).info(json.dumps(data))
 
@@ -800,7 +1030,7 @@ class BodyFromTable(RestTools):
         data = json.dumps(data)
         logging.getLogger(_LOGGER_NAME).info(data)
 
-        ret = func(self.url, data)
+        ret = func(self.url, data, g_headers)
 
         if len(ret) > 0:
             try:
@@ -846,22 +1076,22 @@ class BodyFromTable(RestTools):
     def endTable(self):
         pass
 
-class GraphqlQuery(BodyFromTable):
+class GraphqlQuery(GraphqlBodyFromTable):
     def __init__(self, url, count=1, query=None, args=None, body=None, prefix=None):
         global host_url
-        logging.getLogger(_LOGGER_NAME).info('GraphqlQuery(BodyFromTable)')
+        logging.getLogger(_LOGGER_NAME).info('GraphqlQuery(GraphqlBodyFromTable)')
         logging.getLogger(_LOGGER_NAME).info(host_url)
         logging.getLogger(_LOGGER_NAME).info(json.dumps(url))
         logging.getLogger(_LOGGER_NAME).info(json.dumps(query))
         logging.getLogger(_LOGGER_NAME).info(json.dumps(args))
         logging.getLogger(_LOGGER_NAME).info(json.dumps(count))
-        BodyFromTable.__init__(self, "GraphqlQuery", host_url, count, query, args, url, "query MyQuery")
+        GraphqlBodyFromTable.__init__(self, "GraphqlQuery", host_url, count, query, args, url, "query MyQuery")
 
-class GraphqlMutation(BodyFromTable):
+class GraphqlMutation(GraphqlBodyFromTable):
     def __init__(self, url, count=1, query=None, args=None, body=None, prefix=None):
         global host_url
-        logging.getLogger(_LOGGER_NAME).info('GraphqlMutation(BodyFromTable)')
+        logging.getLogger(_LOGGER_NAME).info('GraphqlMutation(GraphqlBodyFromTable)')
         logging.getLogger(_LOGGER_NAME).info(host_url)
         logging.getLogger(_LOGGER_NAME).info(json.dumps(url))
         logging.getLogger(_LOGGER_NAME).info(json.dumps(args))
-        BodyFromTable.__init__(self, "GraphqlMutation", host_url, count, query, args, url, "mutation MyMutation")
+        GraphqlBodyFromTable.__init__(self, "GraphqlMutation", host_url, count, query, args, url, "mutation MyMutation")
