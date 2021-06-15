@@ -49,6 +49,11 @@ class DateUtils:
       else:
         return offset
 
+    def getTimeOffset(self, time):
+    
+      offset = str( d.utcnow().time().hour - int( time.split(':')[0]) ) 
+      return offset
+
     def js_time_diff( self, js_time, unix_time = None ):
 
         match = re.match( '\/Date\((\d+)\)\/', js_time )
