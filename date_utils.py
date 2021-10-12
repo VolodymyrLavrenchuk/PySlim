@@ -49,6 +49,18 @@ class DateUtils:
       else:
         return offset
 
+    def getLocalTzName(self):
+        if time.daylight:
+            offsetHour = time.altzone / 3600
+        else:
+            offsetHour = time.timezone / 3600
+        return 'Etc/GMT%+d' % offsetHour
+
+    def getTimeOffset(self, time):
+    
+      offset = str( d.utcnow().time().hour - int( time.split(':')[0]) ) 
+      return offset
+
     def js_time_diff( self, js_time, unix_time = None ):
 
         match = re.match( '\/Date\((\d+)\)\/', js_time )
