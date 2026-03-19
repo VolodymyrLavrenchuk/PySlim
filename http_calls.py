@@ -44,6 +44,11 @@ def make_request(func, req):
             print("Will retry: %s" % will_retry)
             return will_retry
 
+        if isinstance(exc, urllib.error.URLError):
+            print("reason: %s" % exc.reason)
+            will_retry = isinstance(exc.reason, socket_error)
+            print("Will retry: %s" % will_retry)
+            return will_retry
         return False
 
     @retry(stop_max_attempt_number=max_attempt_number,
