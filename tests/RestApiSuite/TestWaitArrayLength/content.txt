@@ -1,0 +1,19 @@
+'''Should be "0" after test setup'''
+-!|script|RestTools|
+|wait|0.2|second|5|times url|${URL}/users|response array has length|0|
+
+!|post|${URL}/users|
+|name              |
+|John              |
+
+'''Should be "1" after adding one record'''
+-!|script|RestTools|
+|wait|0.2|second|10|times url|${URL}/users|response array has length|1|
+
+!|post|${URL}/users|
+|name              |
+|Mary              |
+
+'''Should be "2" after adding another one record'''
+-!|script|RestTools|
+|wait|0.2|second|10|times url|${URL}/users|response array has length|2|
